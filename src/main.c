@@ -1,17 +1,17 @@
 #include <stdio.h>
-#include "M480.h"
+#include "NuMicro.h"
+#include "vcom_serial.h"
 #include "hid_transfer.h"
 
 #include "DAP.h"
+
 
 void systemInit(void);
 void SerialInit(void);
 void USB_Config(void);
 
 int main(void)
-{
-	uint32_t i;
-	
+{	
 	systemInit();
 	
 	SerialInit();
@@ -20,13 +20,17 @@ int main(void)
 	
 	USB_Config();
 	
-	GPIO_SetMode(PB, BIT14, GPIO_MODE_OUTPUT);
+	GPIO_SetMode(PC, (1 << 0), GPIO_MODE_OUTPUT);	// PC0 => UART RXD ״ָ̬ʾ
+	GPIO_SetMode(PC, (1 << 1), GPIO_MODE_OUTPUT);	// PC1 => UART TXD ״ָ̬ʾ
 	
     while(1)
-    {	
+    {
 		usbd_hid_process();
 		
-		if(++i%100000 == 0) PB14 = 1 - PB14;
+		VCOM_TransferData();
+		
+		PC0 = !(UART2->FIFOSTS & UART_FIFOSTS_RXIDLE_Msk);
+		PC1 = !(UART2->FIFOSTS & UART_FIFOSTS_TXEMPTYF_Msk);
     }
 }
 
@@ -35,8 +39,8 @@ void USB_Config(void)
 {
 	SYS_UnlockReg();
 	
-	SYS->GPA_MFPH &= ~(SYS_GPA_MFPH_PA12MFP_Msk      | SYS_GPA_MFPH_PA13MFP_Msk     | SYS_GPA_MFPH_PA14MFP_Msk     | SYS_GPA_MFPH_PA15MFP_Msk);
-    SYS->GPA_MFPH |=  (SYS_GPA_MFPH_PA12MFP_USB_VBUS | SYS_GPA_MFPH_PA13MFP_USB_D_N | SYS_GPA_MFPH_PA14MFP_USB_D_P | SYS_GPA_MFPH_PA15MFP_USB_OTG_ID);
+	SYS->GPA_MFPH &= ~(SYS_GPA_MFPH_PA12MFP_Msk      | SYS_GPA_MFPH_PA13MFP_Msk     | SYS_GPA_MFPH_PA14MFP_Msk);
+    SYS->GPA_MFPH |=  (SYS_GPA_MFPH_PA12MFP_USB_VBUS | SYS_GPA_MFPH_PA13MFP_USB_D_N | SYS_GPA_MFPH_PA14MFP_USB_D_P);
 	
 	SYS->USBPHY = (SYS->USBPHY & ~SYS_USBPHY_USBROLE_Msk) | SYS_USBPHY_USBEN_Msk | SYS_USBPHY_SBO_Msk;
 	
@@ -50,6 +54,8 @@ void USB_Config(void)
     USBD_Open(&gsInfo, HID_ClassRequest, NULL);
     
     HID_Init();		// Endpoint configuration
+	
+	VCOM_Init();	// Endpoint configuration
 	
     USBD_Start();
 
@@ -82,27 +88,15 @@ void systemInit(void)
 
 void SerialInit(void)
 {	
-	SYS->GPA_MFPL &= ~(SYS_GPA_MFPL_PA0MFP_Msk       | SYS_GPA_MFPL_PA1MFP_Msk);
-    SYS->GPA_MFPL |=  (SYS_GPA_MFPL_PA0MFP_UART0_RXD | SYS_GPA_MFPL_PA1MFP_UART0_TXD);
+	GPIO_SetPullCtl(PB, BIT0, GPIO_PUSEL_PULL_UP);
+	SYS->GPB_MFPL &= ~(SYS_GPB_MFPL_PB0MFP_Msk       | SYS_GPB_MFPL_PB1MFP_Msk);
+    SYS->GPB_MFPL |=  (SYS_GPB_MFPL_PB0MFP_UART2_RXD | SYS_GPB_MFPL_PB1MFP_UART2_TXD);
 	
-	CLK_EnableModuleClock(UART0_MODULE);
+	CLK_SetModuleClock(UART2_MODULE, CLK_CLKSEL3_UART2SEL_HXT, CLK_CLKDIV4_UART2(1));
+	CLK_EnableModuleClock(UART2_MODULE);
 	
-	CLK_SetModuleClock(UART0_MODULE, CLK_CLKSEL1_UART0SEL_HXT, CLK_CLKDIV0_UART0(1));
- 	
-	UART_Open(UART0, 115200);
-}
+	UART_Open(UART2, 115200);
+	UART_ENABLE_INT(UART2, (UART_INTEN_RDAIEN_Msk | UART_INTEN_THREIEN_Msk | UART_INTEN_RXTOIEN_Msk));
 
-
-int fputc(int ch, FILE *stream)
-{
-	while(UART0->FIFOSTS & UART_FIFOSTS_TXFULL_Msk) __NOP();
-    UART0->DAT = ch;
-	
-    if(ch == '\n')
-    {
-        while(UART0->FIFOSTS & UART_FIFOSTS_TXFULL_Msk) __NOP();
-        UART0->DAT = '\r';
-    }
-	
-    return ch;
+    NVIC_EnableIRQ(UART2_IRQn);
 }

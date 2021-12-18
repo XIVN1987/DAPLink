@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "NuMicro.h"
+#include "vcom_serial.h"
 #include "hid_transfer.h"
 
 
@@ -10,12 +11,12 @@ void USBD_IRQHandler(void)
     uint32_t u32State = USBD_GET_BUS_STATE();
 
 //------------------------------------------------------------------
-    if (u32IntSts & USBD_INTSTS_FLDET)
+    if(u32IntSts & USBD_INTSTS_FLDET)
     {
         // Floating detect
         USBD_CLR_INT_FLAG(USBD_INTSTS_FLDET);
 
-        if (USBD_IS_ATTACHED())
+        if(USBD_IS_ATTACHED())
         {
             /* USB Plug In */
             USBD_ENABLE_USB();
@@ -28,23 +29,22 @@ void USBD_IRQHandler(void)
     }
 
 //------------------------------------------------------------------
-    if (u32IntSts & USBD_INTSTS_BUS)
+    if(u32IntSts & USBD_INTSTS_BUS)
     {
-        /* Clear event flag */
         USBD_CLR_INT_FLAG(USBD_INTSTS_BUS);
 
-        if (u32State & USBD_STATE_USBRST)
+        if(u32State & USBD_STATE_USBRST)
         {
             /* Bus reset */
             USBD_ENABLE_USB();
             USBD_SwReset();
         }
-        if (u32State & USBD_STATE_SUSPEND)
+        if(u32State & USBD_STATE_SUSPEND)
         {
             /* Enable USB but disable PHY */
             USBD_DISABLE_PHY();
         }
-        if (u32State & USBD_STATE_RESUME)
+        if(u32State & USBD_STATE_RESUME)
         {
             /* Enable USB and enable PHY */
             USBD_ENABLE_USB();
@@ -54,18 +54,15 @@ void USBD_IRQHandler(void)
 //------------------------------------------------------------------
     if(u32IntSts & USBD_INTSTS_WAKEUP)
     {
-        /* Clear event flag */
         USBD_CLR_INT_FLAG(USBD_INTSTS_WAKEUP);
     }
 
 //------------------------------------------------------------------
-    if (u32IntSts & USBD_INTSTS_USB)
+    if(u32IntSts & USBD_INTSTS_USB)
     {
-        // USB event
-        if (u32IntSts & USBD_INTSTS_SETUP)
+        if(u32IntSts & USBD_INTSTS_SETUP)
         {
             // Setup packet
-            /* Clear event flag */
             USBD_CLR_INT_FLAG(USBD_INTSTS_SETUP);
 
             /* Clear the data IN/OUT ready flag of control end-points */
@@ -75,72 +72,71 @@ void USBD_IRQHandler(void)
             USBD_ProcessSetupPacket();
         }
 
-        // EP events
-        if (u32IntSts & USBD_INTSTS_EP0)
+        if(u32IntSts & USBD_INTSTS_EP0)			// control IN
         {
-            /* Clear event flag */
             USBD_CLR_INT_FLAG(USBD_INTSTS_EP0);
-            // control IN
+            
             USBD_CtrlIn();
         }
 
-        if (u32IntSts & USBD_INTSTS_EP1)
+        if(u32IntSts & USBD_INTSTS_EP1)			// control OUT
         {
-            /* Clear event flag */
             USBD_CLR_INT_FLAG(USBD_INTSTS_EP1);
 
-            // control OUT
             USBD_CtrlOut();
+			
+			// In ACK of SET_LINE_CODE
+			extern uint8_t g_usbd_SetupPacket[];
+            if(g_usbd_SetupPacket[1] == SET_LINE_CODE)
+            {
+                if(g_usbd_SetupPacket[4] == 1)	// Interface number
+                    VCOM_LineCoding();
+            }
         }
 
-        if (u32IntSts & USBD_INTSTS_EP2)
+        if(u32IntSts & USBD_INTSTS_EP2)			// Interrupt IN
         {
-            /* Clear event flag */
             USBD_CLR_INT_FLAG(USBD_INTSTS_EP2);
-            // Interrupt IN
+            
             EP2_Handler();
         }
 
-        if (u32IntSts & USBD_INTSTS_EP3)
+        if(u32IntSts & USBD_INTSTS_EP3)			// Interrupt OUT
         {
-            /* Clear event flag */
             USBD_CLR_INT_FLAG(USBD_INTSTS_EP3);
-            // Interrupt OUT
+            
             EP3_Handler();
         }
 
-        if (u32IntSts & USBD_INTSTS_EP4)
+        if(u32IntSts & USBD_INTSTS_EP4)
         {
-            /* Clear event flag */
             USBD_CLR_INT_FLAG(USBD_INTSTS_EP4);
         }
 
-        if (u32IntSts & USBD_INTSTS_EP5)
+        if(u32IntSts & USBD_INTSTS_EP5)			// Bulk IN
         {
-            /* Clear event flag */
             USBD_CLR_INT_FLAG(USBD_INTSTS_EP5);
+			
+            EP5_Handler();
         }
 
-        if (u32IntSts & USBD_INTSTS_EP6)
+        if(u32IntSts & USBD_INTSTS_EP6)			// Bulk OUT
         {
-            /* Clear event flag */
             USBD_CLR_INT_FLAG(USBD_INTSTS_EP6);
-        }
-
-        if (u32IntSts & USBD_INTSTS_EP7)
-        {
-            /* Clear event flag */
-            USBD_CLR_INT_FLAG(USBD_INTSTS_EP7);
+			
+            EP6_Handler();
         }
     }
 }
 
-void EP2_Handler(void)  /* Interrupt IN handler */
+
+void EP2_Handler(void)  	// Interrupt IN handler
 {
     HID_SetInReport();
 }
 
-void EP3_Handler(void)  /* Interrupt OUT handler */
+
+void EP3_Handler(void)  	// Interrupt OUT handler
 {
     uint8_t *ptr = (uint8_t *)(USBD_BUF_BASE + USBD_GET_EP_BUF_ADDR(EP3));
 	
@@ -150,12 +146,6 @@ void EP3_Handler(void)  /* Interrupt OUT handler */
 }
 
 
-/*--------------------------------------------------------------------------*/
-/**
-  * @brief  USBD Endpoint Config.
-  * @param  None.
-  * @retval None.
-  */
 void HID_Init(void)
 {
     /* Init setup packet buffer */
@@ -175,12 +165,12 @@ void HID_Init(void)
 
     /*****************************************************/
     /* EP2 ==> Interrupt IN endpoint, address 1 */
-    USBD_CONFIG_EP(EP2, USBD_CFG_EPMODE_IN | INT_IN_EP_NUM);
+    USBD_CONFIG_EP(EP2, USBD_CFG_EPMODE_IN | HID_INT_IN_EP);
     /* Buffer range for EP2 */
     USBD_SET_EP_BUF_ADDR(EP2, EP2_BUF_BASE);
 
-    /* EP3 ==> Interrupt OUT endpoint, address 2 */
-    USBD_CONFIG_EP(EP3, USBD_CFG_EPMODE_OUT | INT_OUT_EP_NUM);
+    /* EP3 ==> Interrupt OUT endpoint, address 1 */
+    USBD_CONFIG_EP(EP3, USBD_CFG_EPMODE_OUT | HID_INT_OUT_EP);
     /* Buffer range for EP3 */
     USBD_SET_EP_BUF_ADDR(EP3, EP3_BUF_BASE);
     /* trigger to receive OUT data */
@@ -188,73 +178,96 @@ void HID_Init(void)
 
 }
 
+
 void HID_ClassRequest(void)
 {
     uint8_t buf[8];
 
     USBD_GetSetupPacket(buf);
 
-    if (buf[0] & 0x80)   /* request data transfer direction */
+    if(buf[0] & 0x80) 	// Device to host
     {
-        // Device to host
-        switch (buf[1])
+        switch(buf[1])
         {
         case GET_REPORT:
-//             {
-//                 break;
-//             }
         case GET_IDLE:
-//             {
-//                 break;
-//             }
         case GET_PROTOCOL:
-//            {
-//                break;
-//            }
+			/* Setup error, stall the device */
+			USBD_SetStall(0);
+			break;
+		
+		case GET_LINE_CODE:
+            if(buf[4] == 1)
+            {
+                USBD_MemCopy((uint8_t *)(USBD_BUF_BASE + USBD_GET_EP_BUF_ADDR(EP0)), (uint8_t *)&LineCfg, 7);
+			}
+
+            /* Data stage */
+            USBD_SET_DATA1(EP0);
+            USBD_SET_PAYLOAD_LEN(EP0, 7);
+
+            /* Status stage */
+            USBD_PrepareCtrlOut(0,0);
+            break;
+		
         default:
-        {
             /* Setup error, stall the device */
             USBD_SetStall(0);
             break;
         }
-        }
     }
-    else
+    else				// Host to device
     {
-        // Host to device
-        switch (buf[1])
+        switch(buf[1])
         {
         case SET_REPORT:
-        {
-            if (buf[3] == 3)
+            if(buf[3] == 3)
             {
                 /* Request Type = Feature */
                 USBD_SET_DATA1(EP1);
                 USBD_SET_PAYLOAD_LEN(EP1, 0);
             }
             break;
-        }
+        
         case SET_IDLE:
-        {
             /* Status stage */
             USBD_SET_DATA1(EP0);
             USBD_SET_PAYLOAD_LEN(EP0, 0);
             break;
-        }
-        case SET_PROTOCOL:
-//             {
-//                 break;
-//             }
+		
+		case SET_PROTOCOL:
+			 /* Setup error, stall the device */
+            USBD_SetStall(0);
+            break;
+		
+		case SET_CONTROL_LINE_STATE:
+            if(buf[4] == 1)
+            {
+				vcom.hw_flow = (buf[3] << 8) | buf[2];
+            }
+
+            /* Status stage */
+            USBD_SET_DATA1(EP0);
+            USBD_SET_PAYLOAD_LEN(EP0, 0);
+            break;
+
+        case SET_LINE_CODE:
+            if(buf[4] == 1)
+                USBD_PrepareCtrlOut((uint8_t *)&LineCfg, 7);
+            
+            /* Status stage */
+            USBD_SET_DATA1(EP0);
+            USBD_SET_PAYLOAD_LEN(EP0, 0);
+            break;
+		
         default:
-        {
-            // Stall
             /* Setup error, stall the device */
             USBD_SetStall(0);
             break;
         }
-        }
     }
 }
+
 
 /***************************************************************/
 #include "DAP_Config.h"

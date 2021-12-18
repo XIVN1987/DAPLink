@@ -26,7 +26,7 @@
 #define DAP_PACKET_SIZE         64              ///< USB: 64 = Full-Speed, 1024 = High-Speed.
 
 /// Maximum Package Buffers for Command and Response data.
-#define DAP_PACKET_COUNT        1              ///< Buffers: 64 = Full-Speed, 4 = High-Speed.
+#define DAP_PACKET_COUNT        16              ///< Buffers: 64 = Full-Speed, 4 = High-Speed.
 
 
 /// Indicate that UART Serial Wire Output (SWO) trace is available.
@@ -63,13 +63,21 @@ DAP Hardware I/O Pin Access Functions
 
 // Configure DAP I/O pins ------------------------------
 
-#define SWD_GPIO   	PA
-#define SWD_SWCLK   PA4
-#define SWD_SWDIO   PA5
-#define PIN_SWCLK  	4
-#define PIN_SWDIO  	5
-#define MSK_SWCLK   (1 << PIN_SWCLK)
-#define MSK_SWDIO   (1 << PIN_SWDIO)
+#define SWCLK_PORT			PA
+#define SWCLK_PIN			1
+#define SWDIO_PORT			PA
+#define SWDIO_PIN			0
+
+#define SWD_SWCLK   		PA1
+#define SWD_SWDIO   		PA0
+
+#define LED_CONNECTED_PORT	PA
+#define LED_CONNECTED_PIN	2
+#define LED_RUNNING_PORT	PA
+#define LED_RUNNING_PIN		2
+
+#define LED_CONNECTED		PA2
+#define LED_RUNNING			PA2
 
 /** Setup JTAG I/O pins: TCK, TMS, TDI, TDO, nTRST, and nRESET.
  - TCK, TMS, TDI, nTRST, nRESET to output mode and set to high level.
@@ -86,8 +94,11 @@ static void PORT_JTAG_SETUP(void)
 */
 static void PORT_SWD_SETUP(void)
 {
-    GPIO_SetMode(SWD_GPIO, MSK_SWCLK, GPIO_MODE_OUTPUT);
-	GPIO_SetMode(SWD_GPIO, MSK_SWDIO, GPIO_MODE_OUTPUT);
+    GPIO_SetMode(SWCLK_PORT, (1 << SWCLK_PIN), GPIO_MODE_OUTPUT); SWD_SWCLK = 1;
+	GPIO_SetMode(SWDIO_PORT, (1 << SWDIO_PIN), GPIO_MODE_OUTPUT); SWD_SWDIO = 1;
+	
+	GPIO_SetMode(LED_CONNECTED_PORT, (1 << LED_CONNECTED_PIN), GPIO_MODE_OUTPUT);
+	GPIO_SetMode(LED_RUNNING_PORT, (1 << LED_RUNNING_PIN), GPIO_MODE_OUTPUT);
 }
 
 /** Disable JTAG/SWD I/O Pins.
@@ -95,8 +106,8 @@ static void PORT_SWD_SETUP(void)
 */
 static void PORT_OFF(void)
 {
-	GPIO_SetMode(SWD_GPIO, MSK_SWCLK, GPIO_MODE_INPUT);
-	GPIO_SetMode(SWD_GPIO, MSK_SWDIO, GPIO_MODE_INPUT);
+	GPIO_SetMode(SWCLK_PORT, (1 << SWCLK_PIN), GPIO_MODE_INPUT);
+	GPIO_SetMode(SWDIO_PORT, (1 << SWDIO_PIN), GPIO_MODE_INPUT);
 }
 
 
@@ -105,7 +116,7 @@ static void PORT_OFF(void)
 // Current status of the SWCLK/TCK DAP hardware I/O pin
 static __inline uint32_t PIN_SWCLK_TCK_IN(void)
 {
-    return (SWD_GPIO->MODE & (3 << (PIN_SWCLK << 1))) ? 1 : 0;
+    return SWD_SWCLK;
 }
 
 static __inline void PIN_SWCLK_TCK_SET(void)
@@ -119,12 +130,12 @@ static __inline void PIN_SWCLK_TCK_CLR(void)
 }
 
 
-// SWDIO/TMS Pin I/O --------------------------------------
+// SWDIO/TMS I/O Pin --------------------------------------
 
 // Current status of the SWDIO/TMS DAP hardware I/O pin
 static __inline uint32_t PIN_SWDIO_TMS_IN(void)
 {
-    return (SWD_GPIO->MODE & (3 << (PIN_SWDIO << 1))) ? 1 : 0;
+    return SWD_SWDIO;
 }
 
 static __inline void PIN_SWDIO_TMS_SET(void)
@@ -138,6 +149,8 @@ static __inline void PIN_SWDIO_TMS_CLR(void)
 }
 
 
+// SWDIO I/O pin (used in SWD mode only) ------------------
+
 static __inline uint32_t PIN_SWDIO_IN(void)
 {
     return SWD_SWDIO;
@@ -150,13 +163,12 @@ static __inline void PIN_SWDIO_OUT(uint32_t bit)
 
 static __inline void PIN_SWDIO_OUT_ENABLE(void)
 {
-	GPIO_SetMode(SWD_GPIO, MSK_SWDIO, GPIO_MODE_OUTPUT);
-	SWD_SWDIO = 0;
+	GPIO_SetMode(SWDIO_PORT, (1 << SWDIO_PIN), GPIO_MODE_OUTPUT);
 }
 
 static __inline void PIN_SWDIO_OUT_DISABLE(void)
 {
-    GPIO_SetMode(SWD_GPIO, MSK_SWDIO, GPIO_MODE_INPUT);
+    GPIO_SetMode(SWDIO_PORT, (1 << SWDIO_PIN), GPIO_MODE_INPUT);
 }
 
 
@@ -215,10 +227,12 @@ static __inline void PIN_nRESET_OUT(uint32_t bit)
 
 static __inline void LED_CONNECTED_OUT(uint32_t bit)
 {
+	LED_CONNECTED = bit;
 }
 
 static __inline void LED_RUNNING_OUT(uint32_t bit)
 {
+	LED_RUNNING = bit;
 }
 
 
@@ -231,7 +245,7 @@ static void DAP_SETUP(void)
 
 static uint32_t RESET_TARGET(void)
 {
-    return (0);              // change to '1' when a device reset sequence is implemented
+    return 0;	// change to '1' when a device reset sequence is implemented
 }
 
 
