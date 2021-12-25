@@ -215,8 +215,13 @@ static __inline uint32_t PIN_nRESET_IN(void)
     return 0;
 }
 
+extern uint8_t swd_write_word(uint32_t addr, uint32_t val);
 static __inline void PIN_nRESET_OUT(uint32_t bit)
 {
+	if(bit == 0)
+	{
+		swd_write_word((uint32_t)&SCB->AIRCR, ((0x5FA << SCB_AIRCR_VECTKEY_Pos) | SCB_AIRCR_SYSRESETREQ_Msk));
+	}
 }
 
 
@@ -243,9 +248,12 @@ static void DAP_SETUP(void)
 }
 
 
+extern uint8_t swd_write_word(uint32_t addr, uint32_t val);
 static uint32_t RESET_TARGET(void)
 {
-    return 0;	// change to '1' when a device reset sequence is implemented
+	swd_write_word((uint32_t)&SCB->AIRCR, ((0x5FA << SCB_AIRCR_VECTKEY_Pos) | SCB_AIRCR_SYSRESETREQ_Msk));
+	
+    return 1;	// change to '1' when a device reset sequence is implemented
 }
 
 

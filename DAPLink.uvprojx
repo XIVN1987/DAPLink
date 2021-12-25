@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\src;.\src\DAP;.\src\CSL\CMSIS\CoreSupport;.\src\CSL\CMSIS\DeviceSupport;.\src\CSL\NUCM480_StdPeriph_Driver</IncludePath>
+              <IncludePath>.\src;.\src\DAP;.\src\SWD_host;.\src\CSL\CMSIS\CoreSupport;.\src\CSL\CMSIS\DeviceSupport;.\src\CSL\NUCM480_StdPeriph_Driver</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -427,6 +427,16 @@
               <FileName>SWO.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\DAP\SWO.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>SWD_host</GroupName>
+          <Files>
+            <File>
+              <FileName>SWD_host.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\SWD_host\SWD_host.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -560,5 +570,14 @@
     <components/>
     <files/>
   </RTE>
+
+  <LayerInfo>
+    <Layers>
+      <Layer>
+        <LayName>DAPLink</LayName>
+        <LayPrjMark>1</LayPrjMark>
+      </Layer>
+    </Layers>
+  </LayerInfo>
 
 </Project>
