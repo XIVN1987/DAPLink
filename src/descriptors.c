@@ -1,5 +1,4 @@
 #include "NuMicro.h"
-#include "vcom_serial.h"
 #include "hid_transfer.h"
 
 
@@ -45,9 +44,10 @@ uint8_t gu8ConfigDescriptor[] =
 {
     LEN_CONFIG,         // bLength
     DESC_CONFIG,        // bDescriptorType
-#define TOTAL_LEN  (LEN_CONFIG + (LEN_INTERFACE + LEN_HID + LEN_ENDPOINT + LEN_ENDPOINT) + (8 + LEN_INTERFACE + 5 + 5 + 4 + 5 + LEN_ENDPOINT + LEN_INTERFACE + LEN_ENDPOINT + LEN_ENDPOINT))
+#define TOTAL_LEN	(LEN_CONFIG + (LEN_INTERFACE + LEN_HID + LEN_ENDPOINT + LEN_ENDPOINT) + \
+								  (8 + LEN_INTERFACE + 5 + 5 + 4 + 5 + LEN_ENDPOINT + LEN_INTERFACE + LEN_ENDPOINT + LEN_ENDPOINT))
 	TOTAL_LEN & 0xFF, TOTAL_LEN >> 8,	// wTotalLength
-    0x03,               // bNumInterfaces
+    0x03, 				// bNumInterfaces
     0x01,               // bConfigurationValue
     0x00,               // iConfiguration
     0x00,               // bmAttributes, D6: self power  D5: remote wake-up
@@ -174,7 +174,7 @@ uint8_t gu8ConfigDescriptor[] =
 };
 
 
-uint8_t gu8StringLang[4] =
+uint8_t gu8StringLang[] =
 {
     4,
     DESC_STRING,
@@ -195,7 +195,7 @@ uint8_t gu8ProductStringDesc[] =
     'M', 0, '4', 0, '8', 0, '0', 0, ' ', 0, 'C', 0, 'M', 0, 'S', 0, 'I', 0, 'S', 0, '-', 0, 'D', 0, 'A', 0, 'P', 0
 };
 
-uint8_t *gpu8UsbString[4] =
+uint8_t *gpu8UsbString[] =
 {
     gu8StringLang,
     gu8VendorStringDesc,
@@ -204,25 +204,21 @@ uint8_t *gpu8UsbString[4] =
 };
 
 
-uint8_t *gu8UsbHidReport[3] =
+uint8_t *gu8UsbHidReport[] =
 {
     HID_DeviceReportDescriptor,
     NULL,
-    NULL,
 };
 
-uint32_t gu32UsbHidReportLen[3] =
+uint32_t gu32UsbHidReportLen[] =
 {
     sizeof(HID_DeviceReportDescriptor),
     0,
-    0,
 };
 
-
-uint32_t gu32ConfigHidDescIdx[3] =
+uint32_t gu32ConfigHidDescIdx[] =
 {
     (LEN_CONFIG + LEN_INTERFACE),
-    0,
     0,
 };
 
@@ -231,14 +227,14 @@ uint8_t gu8BOSDescriptor[] =
 {
     LEN_BOS,
     DESC_BOS,
-    0x0C & 0x00FF, ((0x0C & 0xFF00) >> 8),  // wTotalLength
-    0x01,                                   // bNumDeviceCaps
+    0x0C,  						// wTotalLength
+    0x01,                       // bNumDeviceCaps
 
     /* Device Capability */
-    LEN_BOSCAP,                             // bLength
-    DESC_CAPABILITY,                        // bDescriptorType
-    CAP_USB20_EXT,                          // bDevCapabilityType
-    0x02, 0x00, 0x00, 0x00                  // bmAttributes
+    LEN_BOSCAP,                 // bLength
+    DESC_CAPABILITY,            // bDescriptorType
+    CAP_USB20_EXT,              // bDevCapabilityType
+    0x02, 0x00, 0x00, 0x00      // bmAttributes
 };
 
 

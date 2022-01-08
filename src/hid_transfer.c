@@ -1,68 +1,111 @@
-#include <stdio.h>
-#include <string.h>
 #include "NuMicro.h"
 #include "vcom_serial.h"
 #include "hid_transfer.h"
 
+
+void HID_Init(void)
+{
+    /* Init setup packet buffer */
+    USBD->STBUFSEG = SETUP_BUF_BASE;
+
+    /*****************************************************/
+    /* EP0 ==> control IN endpoint, address 0 */
+    USBD_CONFIG_EP(EP0, USBD_CFG_CSTALL | USBD_CFG_EPMODE_IN | 0);
+    USBD_SET_EP_BUF_ADDR(EP0, EP0_BUF_BASE);
+
+    /* EP1 ==> control OUT endpoint, address 0 */
+    USBD_CONFIG_EP(EP1, USBD_CFG_CSTALL | USBD_CFG_EPMODE_OUT | 0);
+    USBD_SET_EP_BUF_ADDR(EP1, EP1_BUF_BASE);
+
+    /*****************************************************/
+    /* EP2 ==> Interrupt IN endpoint, address 1 */
+    USBD_CONFIG_EP(EP2, USBD_CFG_EPMODE_IN | HID_INT_IN_EP);
+    USBD_SET_EP_BUF_ADDR(EP2, EP2_BUF_BASE);
+
+    /* EP3 ==> Interrupt OUT endpoint, address 1 */
+    USBD_CONFIG_EP(EP3, USBD_CFG_EPMODE_OUT | HID_INT_OUT_EP);
+    USBD_SET_EP_BUF_ADDR(EP3, EP3_BUF_BASE);
+    /* trigger to receive OUT data */
+    USBD_SET_PAYLOAD_LEN(EP3, EP3_MAX_PKT_SIZE);
+
+	/*****************************************************/
+	/* EP4 ==> Interrupt IN endpoint, address 2 */
+    USBD_CONFIG_EP(EP4, USBD_CFG_EPMODE_IN | CDC_INT_IN_EP);
+    USBD_SET_EP_BUF_ADDR(EP4, EP4_BUF_BASE);
+	
+    /* EP5 ==> Bulk IN endpoint, address 3 */
+    USBD_CONFIG_EP(EP5, USBD_CFG_EPMODE_IN | CDC_BULK_IN_EP);
+    USBD_SET_EP_BUF_ADDR(EP5, EP5_BUF_BASE);
+
+    /* EP6 ==> Bulk Out endpoint, address 3 */
+    USBD_CONFIG_EP(EP6, USBD_CFG_EPMODE_OUT | CDC_BULK_OUT_EP);
+    USBD_SET_EP_BUF_ADDR(EP6, EP6_BUF_BASE);
+    /* trigger receive OUT data */
+    USBD_SET_PAYLOAD_LEN(EP6, EP6_MAX_PKT_SIZE);
+}
+
+
+void EP2_Handler(void)  	// Interrupt IN
+{
+    HID_SetInReport();
+}
+
+void EP3_Handler(void)  	// Interrupt OUT
+{
+    uint8_t *ptr = (uint8_t *)(USBD_BUF_BASE + USBD_GET_EP_BUF_ADDR(EP3));
+	
+    HID_GetOutReport(ptr, USBD_GET_PAYLOAD_LEN(EP3));
+	
+    USBD_SET_PAYLOAD_LEN(EP3, EP3_MAX_PKT_SIZE);
+}
 
 void USBD_IRQHandler(void)
 {
     uint32_t u32IntSts = USBD_GET_INT_FLAG();
     uint32_t u32State = USBD_GET_BUS_STATE();
 
-//------------------------------------------------------------------
-    if(u32IntSts & USBD_INTSTS_FLDET)
+    if(u32IntSts & USBD_INTSTS_FLDET)			// Floating detect
     {
-        // Floating detect
         USBD_CLR_INT_FLAG(USBD_INTSTS_FLDET);
 
-        if(USBD_IS_ATTACHED())
+        if(USBD_IS_ATTACHED())					// USB Plug In
         {
-            /* USB Plug In */
             USBD_ENABLE_USB();
         }
-        else
+        else									// USB Un-plug
         {
-            /* USB Un-plug */
             USBD_DISABLE_USB();
         }
     }
-
-//------------------------------------------------------------------
+	
     if(u32IntSts & USBD_INTSTS_BUS)
     {
         USBD_CLR_INT_FLAG(USBD_INTSTS_BUS);
 
-        if(u32State & USBD_STATE_USBRST)
+        if(u32State & USBD_STATE_USBRST)		// Bus reset
         {
-            /* Bus reset */
             USBD_ENABLE_USB();
             USBD_SwReset();
         }
-        if(u32State & USBD_STATE_SUSPEND)
+        if(u32State & USBD_STATE_SUSPEND)		// Suspend
         {
-            /* Enable USB but disable PHY */
             USBD_DISABLE_PHY();
         }
-        if(u32State & USBD_STATE_RESUME)
+        if(u32State & USBD_STATE_RESUME)		// Resume
         {
-            /* Enable USB and enable PHY */
             USBD_ENABLE_USB();
         }
     }
-
-//------------------------------------------------------------------
-    if(u32IntSts & USBD_INTSTS_WAKEUP)
+	
+    if(u32IntSts & USBD_INTSTS_WAKEUP)			// Wakeup
     {
         USBD_CLR_INT_FLAG(USBD_INTSTS_WAKEUP);
     }
-
-//------------------------------------------------------------------
+	
     if(u32IntSts & USBD_INTSTS_USB)
     {
         if(u32IntSts & USBD_INTSTS_SETUP)
         {
-            // Setup packet
             USBD_CLR_INT_FLAG(USBD_INTSTS_SETUP);
 
             /* Clear the data IN/OUT ready flag of control end-points */
@@ -72,14 +115,14 @@ void USBD_IRQHandler(void)
             USBD_ProcessSetupPacket();
         }
 
-        if(u32IntSts & USBD_INTSTS_EP0)			// control IN
+        if(u32IntSts & USBD_INTSTS_EP0)			// Control IN
         {
             USBD_CLR_INT_FLAG(USBD_INTSTS_EP0);
             
             USBD_CtrlIn();
         }
 
-        if(u32IntSts & USBD_INTSTS_EP1)			// control OUT
+        if(u32IntSts & USBD_INTSTS_EP1)			// Control OUT
         {
             USBD_CLR_INT_FLAG(USBD_INTSTS_EP1);
 
@@ -89,8 +132,7 @@ void USBD_IRQHandler(void)
 			extern uint8_t g_usbd_SetupPacket[];
             if(g_usbd_SetupPacket[1] == SET_LINE_CODE)
             {
-                if(g_usbd_SetupPacket[4] == 1)	// Interface number
-                    VCOM_LineCoding();
+				VCOM_LineCoding();
             }
         }
 
@@ -130,55 +172,6 @@ void USBD_IRQHandler(void)
 }
 
 
-void EP2_Handler(void)  	// Interrupt IN handler
-{
-    HID_SetInReport();
-}
-
-
-void EP3_Handler(void)  	// Interrupt OUT handler
-{
-    uint8_t *ptr = (uint8_t *)(USBD_BUF_BASE + USBD_GET_EP_BUF_ADDR(EP3));
-	
-    HID_GetOutReport(ptr, USBD_GET_PAYLOAD_LEN(EP3));
-	
-    USBD_SET_PAYLOAD_LEN(EP3, EP3_MAX_PKT_SIZE);
-}
-
-
-void HID_Init(void)
-{
-    /* Init setup packet buffer */
-    /* Buffer range for setup packet -> [0 ~ 0x7] */
-    USBD->STBUFSEG = SETUP_BUF_BASE;
-
-    /*****************************************************/
-    /* EP0 ==> control IN endpoint, address 0 */
-    USBD_CONFIG_EP(EP0, USBD_CFG_CSTALL | USBD_CFG_EPMODE_IN | 0);
-    /* Buffer range for EP0 */
-    USBD_SET_EP_BUF_ADDR(EP0, EP0_BUF_BASE);
-
-    /* EP1 ==> control OUT endpoint, address 0 */
-    USBD_CONFIG_EP(EP1, USBD_CFG_CSTALL | USBD_CFG_EPMODE_OUT | 0);
-    /* Buffer range for EP1 */
-    USBD_SET_EP_BUF_ADDR(EP1, EP1_BUF_BASE);
-
-    /*****************************************************/
-    /* EP2 ==> Interrupt IN endpoint, address 1 */
-    USBD_CONFIG_EP(EP2, USBD_CFG_EPMODE_IN | HID_INT_IN_EP);
-    /* Buffer range for EP2 */
-    USBD_SET_EP_BUF_ADDR(EP2, EP2_BUF_BASE);
-
-    /* EP3 ==> Interrupt OUT endpoint, address 1 */
-    USBD_CONFIG_EP(EP3, USBD_CFG_EPMODE_OUT | HID_INT_OUT_EP);
-    /* Buffer range for EP3 */
-    USBD_SET_EP_BUF_ADDR(EP3, EP3_BUF_BASE);
-    /* trigger to receive OUT data */
-    USBD_SET_PAYLOAD_LEN(EP3, EP3_MAX_PKT_SIZE);
-
-}
-
-
 void HID_ClassRequest(void)
 {
     uint8_t buf[8];
@@ -192,17 +185,11 @@ void HID_ClassRequest(void)
         case GET_REPORT:
         case GET_IDLE:
         case GET_PROTOCOL:
-			/* Setup error, stall the device */
 			USBD_SetStall(0);
 			break;
 		
 		case GET_LINE_CODE:
-            if(buf[4] == 1)
-            {
-                USBD_MemCopy((uint8_t *)(USBD_BUF_BASE + USBD_GET_EP_BUF_ADDR(EP0)), (uint8_t *)&LineCfg, 7);
-			}
-
-            /* Data stage */
+            USBD_MemCopy((uint8_t *)(USBD_BUF_BASE + USBD_GET_EP_BUF_ADDR(EP0)), (uint8_t *)&LineCfg, 7);
             USBD_SET_DATA1(EP0);
             USBD_SET_PAYLOAD_LEN(EP0, 7);
 
@@ -236,25 +223,20 @@ void HID_ClassRequest(void)
             break;
 		
 		case SET_PROTOCOL:
-			 /* Setup error, stall the device */
             USBD_SetStall(0);
             break;
 		
-		case SET_CONTROL_LINE_STATE:
-            if(buf[4] == 1)
-            {
-				vcom.hw_flow = (buf[3] << 8) | buf[2];
-            }
-
+		case SET_LINE_CODE:
+            USBD_PrepareCtrlOut((uint8_t *)&LineCfg, 7);
+            
             /* Status stage */
             USBD_SET_DATA1(EP0);
             USBD_SET_PAYLOAD_LEN(EP0, 0);
             break;
-
-        case SET_LINE_CODE:
-            if(buf[4] == 1)
-                USBD_PrepareCtrlOut((uint8_t *)&LineCfg, 7);
-            
+		
+		case SET_CONTROL_LINE:
+			Vcom.hw_flow = (buf[3] << 8) | buf[2];
+			
             /* Status stage */
             USBD_SET_DATA1(EP0);
             USBD_SET_PAYLOAD_LEN(EP0, 0);
@@ -290,7 +272,6 @@ uint8_t usbd_hid_process(void)
 {
 	uint32_t n;
 
-	// Process pending requests
 	if((USB_RequestOut != USB_RequestIn) || USB_RequestFlag)
 	{
 		DAP_ProcessCommand(USB_Request[USB_RequestOut], USB_Response[USB_ResponseIn]);
@@ -305,24 +286,26 @@ uint8_t usbd_hid_process(void)
 			USB_RequestFlag = 0;
 
 		if(USB_ResponseIdle)
-		{	// Request that data is send back to host
+		{
 			USB_ResponseIdle = 0;
 			
 			USBD_MemCopy((uint8_t *)(USBD_BUF_BASE + USBD_GET_EP_BUF_ADDR(EP2)), USB_Response[USB_ResponseIn], DAP_PACKET_SIZE);
 			USBD_SET_PAYLOAD_LEN(EP2, DAP_PACKET_SIZE);
 		}
 		else
-		{	// Update response index and flag
+		{
 			n = USB_ResponseIn + 1;
-			if (n == DAP_PACKET_COUNT)
+			if(n == DAP_PACKET_COUNT)
 				n = 0;
 			USB_ResponseIn = n;
 
-			if (USB_ResponseIn == USB_ResponseOut)
+			if(USB_ResponseIn == USB_ResponseOut)
 				USB_ResponseFlag = 1;
 		}
+		
 		return 1;
 	}
+	
 	return 0;
 }
 
@@ -339,7 +322,7 @@ void HID_GetOutReport(uint8_t *EpBuf, uint32_t len)
 		return;  // Discard packet when buffer is full
 
 	// Store data into request packet buffer
-	memcpy(USB_Request[USB_RequestIn], EpBuf, len);
+	USBD_MemCopy(USB_Request[USB_RequestIn], EpBuf, len);
 
 	USB_RequestIn++;
 	if(USB_RequestIn == DAP_PACKET_COUNT)

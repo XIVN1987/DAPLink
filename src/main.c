@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "NuMicro.h"
 #include "vcom_serial.h"
 #include "hid_transfer.h"
@@ -7,14 +6,11 @@
 
 
 void systemInit(void);
-void SerialInit(void);
 void USB_Config(void);
 
 int main(void)
-{	
+{
 	systemInit();
-	
-	SerialInit();
 	
 	DAP_Setup();
 	
@@ -32,6 +28,28 @@ int main(void)
 		PC0 = !(UART2->FIFOSTS & UART_FIFOSTS_RXIDLE_Msk);
 		PC1 = !(UART2->FIFOSTS & UART_FIFOSTS_TXEMPTYF_Msk);
     }
+}
+
+
+void systemInit(void)
+{
+	SYS_UnlockReg();
+	
+	SYS->GPF_MFPH &= ~(SYS_GPF_MFPL_PF2MFP_Msk     | SYS_GPF_MFPL_PF3MFP_Msk);
+    SYS->GPF_MFPH |=  (SYS_GPF_MFPL_PF2MFP_XT1_OUT | SYS_GPF_MFPL_PF3MFP_XT1_IN);
+	
+    CLK_EnableXtalRC(CLK_PWRCTL_HXTEN_Msk);		// 使能HXT（外部晶振，12MHz）
+    CLK_WaitClockReady(CLK_STATUS_HXTSTB_Msk);	// 等待HXT稳定
+
+    CLK_SetCoreClock(192000000);				// 用PLL产生指定频率作为系统时钟
+	
+	CLK->PCLKDIV = (CLK_PCLKDIV_PCLK0DIV2 | CLK_PCLKDIV_PCLK1DIV2);
+	
+	SYS_LockReg();
+	
+	SystemCoreClock = 192000000;
+	
+	CyclesPerUs = SystemCoreClock / 1000000;
 }
 
 
@@ -53,50 +71,11 @@ void USB_Config(void)
 	
     USBD_Open(&gsInfo, HID_ClassRequest, NULL);
     
-    HID_Init();		// Endpoint configuration
+    HID_Init();
 	
-	VCOM_Init();	// Endpoint configuration
+	VCOM_Init();
 	
     USBD_Start();
 
     NVIC_EnableIRQ(USBD_IRQn);
-}
-
-
-void systemInit(void)
-{
-	SYS_UnlockReg();
-	
-	SYS->GPF_MFPH &= ~(SYS_GPF_MFPL_PF2MFP_Msk     | SYS_GPF_MFPL_PF3MFP_Msk);
-    SYS->GPF_MFPH |=  (SYS_GPF_MFPL_PF2MFP_XT1_OUT | SYS_GPF_MFPL_PF3MFP_XT1_IN);
-	
-    CLK_EnableXtalRC(CLK_PWRCTL_HXTEN_Msk);		// 使能HXT（外部晶振，12MHz）
-    CLK_WaitClockReady(CLK_STATUS_HXTSTB_Msk);	// 等待HXT稳定
-
-    CLK_SetCoreClock(192000000);				// 用PLL产生指定频率作为系统时钟
-												// 若HXT使能，则PLL时钟源选择HXT，须根据实际情况修改__HXT的值
-	
-	CLK->PCLKDIV = (CLK_PCLKDIV_PCLK0DIV2 | CLK_PCLKDIV_PCLK1DIV2);
-	
-	SYS_LockReg();
-	
-	SystemCoreClock = 192000000;
-	
-	CyclesPerUs = SystemCoreClock / 1000000;
-}
-
-
-void SerialInit(void)
-{	
-	GPIO_SetPullCtl(PB, BIT0, GPIO_PUSEL_PULL_UP);
-	SYS->GPB_MFPL &= ~(SYS_GPB_MFPL_PB0MFP_Msk       | SYS_GPB_MFPL_PB1MFP_Msk);
-    SYS->GPB_MFPL |=  (SYS_GPB_MFPL_PB0MFP_UART2_RXD | SYS_GPB_MFPL_PB1MFP_UART2_TXD);
-	
-	CLK_SetModuleClock(UART2_MODULE, CLK_CLKSEL3_UART2SEL_HXT, CLK_CLKDIV4_UART2(1));
-	CLK_EnableModuleClock(UART2_MODULE);
-	
-	UART_Open(UART2, 115200);
-	UART_ENABLE_INT(UART2, (UART_INTEN_RDAIEN_Msk | UART_INTEN_THREIEN_Msk | UART_INTEN_RXTOIEN_Msk));
-
-    NVIC_EnableIRQ(UART2_IRQn);
 }
