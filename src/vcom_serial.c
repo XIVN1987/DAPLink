@@ -13,7 +13,11 @@ void VCOM_Init(void)
 	CLK_EnableModuleClock(UART2_MODULE);
 	
 	UART_Open(UART2, 115200);
-	UART_ENABLE_INT(UART2, (UART_INTEN_RDAIEN_Msk | UART_INTEN_THREIEN_Msk | UART_INTEN_RXTOIEN_Msk));
+	
+	UART2->FIFO = (UART2->FIFO & (~UART_FIFO_RFITL_Msk)) | UART_FIFO_RFITL_8BYTES;
+	UART_SetTimeoutCnt(UART2, 50);
+	
+	UART_ENABLE_INT(UART2, (UART_INTEN_RDAIEN_Msk | UART_INTEN_RXTOIEN_Msk));
 
     NVIC_EnableIRQ(UART2_IRQn);
 }
@@ -80,7 +84,7 @@ void VCOM_LineCoding(void)
 	Vcom.tx_tail = 0;
 
 	// Reset hardware FIFO
-	UART2->FIFO = 0x3;
+	UART2->FIFO |= (UART_FIFO_RXRST_Msk | UART_FIFO_TXRST_Msk);
 	
 	UART_SetLineConfig(UART2, LineCfg.u32DTERate, data_len, parity, stop_len);
 	
@@ -138,6 +142,9 @@ void UART2_IRQHandler(void)
 }
 
 
+extern uint32_t SysTick_Count;
+static uint32_t SysTick_Count_Save;
+
 void VCOM_TransferData(void)
 {
     int32_t i, len;
@@ -146,8 +153,10 @@ void VCOM_TransferData(void)
     if(Vcom.in_bytes == 0)
     {
         /* Check whether we have new COM Rx data to send to USB or not */
-        if(Vcom.rx_bytes)
+		if(Vcom.rx_bytes && ((Vcom.rx_bytes >= EP5_MAX_PKT_SIZE) || (SysTick_Count_Save != SysTick_Count)))
         {
+			SysTick_Count_Save = SysTick_Count;
+			
             len = Vcom.rx_bytes;
             if(len > EP5_MAX_PKT_SIZE)
                 len = EP5_MAX_PKT_SIZE;

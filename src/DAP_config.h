@@ -39,10 +39,18 @@
 
 #define SWO_BUFFER_SIZE         4096            ///< SWO Trace Buffer Size in bytes (must be 2^n)
 
+#define SWO_STREAM              0               ///< SWO Streaming Trace: 1 = available, 0 = not available.
+
+/// Clock frequency of the Test Domain Timer. Timer value is returned with \ref TIMESTAMP_GET.
+#define TIMESTAMP_CLOCK         1000000U      ///< Timestamp clock in Hz (0 = timestamps not supported).
 
 /// Debug Unit is connected to fixed Target Device.
 #define TARGET_DEVICE_FIXED     0               ///< Target Device: 1 = known, 0 = unknown;
 
+#if TARGET_DEVICE_FIXED
+#define TARGET_DEVICE_VENDOR    ""              ///< String indicating the Silicon Vendor
+#define TARGET_DEVICE_NAME      ""              ///< String indicating the Target Device
+#endif
 
 
 //**************************************************************************************************
@@ -71,6 +79,11 @@ DAP Hardware I/O Pin Access Functions
 #define SWD_SWCLK   		PA1
 #define SWD_SWDIO   		PA0
 
+#define SWD_RST_PORT		PF
+#define SWD_RST_PIN			4
+
+#define SWD_RST				PF4
+
 #define LED_CONNECTED_PORT	PA
 #define LED_CONNECTED_PIN	2
 #define LED_RUNNING_PORT	PA
@@ -78,6 +91,7 @@ DAP Hardware I/O Pin Access Functions
 
 #define LED_CONNECTED		PA2
 #define LED_RUNNING			PA2
+
 
 /** Setup JTAG I/O pins: TCK, TMS, TDI, TDO, nTRST, and nRESET.
  - TCK, TMS, TDI, nTRST, nRESET to output mode and set to high level.
@@ -97,6 +111,8 @@ static void PORT_SWD_SETUP(void)
     GPIO_SetMode(SWCLK_PORT, (1 << SWCLK_PIN), GPIO_MODE_OUTPUT); SWD_SWCLK = 1;
 	GPIO_SetMode(SWDIO_PORT, (1 << SWDIO_PIN), GPIO_MODE_OUTPUT); SWD_SWDIO = 1;
 	
+	GPIO_SetMode(SWD_RST_PORT, (1 << SWD_RST_PIN), GPIO_MODE_OUTPUT); SWD_RST = 1;
+	
 	GPIO_SetMode(LED_CONNECTED_PORT, (1 << LED_CONNECTED_PIN), GPIO_MODE_OUTPUT);
 	GPIO_SetMode(LED_RUNNING_PORT, (1 << LED_RUNNING_PIN), GPIO_MODE_OUTPUT);
 }
@@ -108,6 +124,8 @@ static void PORT_OFF(void)
 {
 	GPIO_SetMode(SWCLK_PORT, (1 << SWCLK_PIN), GPIO_MODE_INPUT);
 	GPIO_SetMode(SWDIO_PORT, (1 << SWDIO_PIN), GPIO_MODE_INPUT);
+	
+	GPIO_SetMode(SWD_RST_PORT, (1 << SWD_RST_PIN), GPIO_MODE_INPUT);
 }
 
 
@@ -212,12 +230,14 @@ static __inline void PIN_nTRST_OUT(uint32_t bit)
 // nRESET Pin I/O------------------------------------------
 static __inline uint32_t PIN_nRESET_IN(void)
 {
-    return 0;
+    return SWD_RST;
 }
 
 extern uint8_t swd_write_word(uint32_t addr, uint32_t val);
 static __inline void PIN_nRESET_OUT(uint32_t bit)
 {
+	SWD_RST = bit;
+	
 	if(bit == 0)
 	{
 		swd_write_word((uint32_t)&SCB->AIRCR, ((0x5FA << SCB_AIRCR_VECTKEY_Pos) | SCB_AIRCR_SYSRESETREQ_Msk));
@@ -241,6 +261,10 @@ static __inline void LED_RUNNING_OUT(uint32_t bit)
 }
 
 
+__STATIC_INLINE uint32_t TIMESTAMP_GET (void) {
+	return (DWT->CYCCNT) / (CPU_CLOCK / TIMESTAMP_CLOCK);
+}
+
 
 static void DAP_SETUP(void)
 {	
@@ -254,6 +278,48 @@ static uint32_t RESET_TARGET(void)
 	swd_write_word((uint32_t)&SCB->AIRCR, ((0x5FA << SCB_AIRCR_VECTKEY_Pos) | SCB_AIRCR_SYSRESETREQ_Msk));
 	
     return 1;	// change to '1' when a device reset sequence is implemented
+}
+
+
+
+
+
+#include <string.h>
+
+/** Get Vendor ID string.
+\param str Pointer to buffer to store the string.
+\return String length.
+*/
+__STATIC_INLINE uint8_t DAP_GetVendorString (char *str) {
+	memcpy((unsigned char*)str, "XIVN1987", sizeof("XIVN1987"));
+	return sizeof("XIVN1987");
+}
+
+/** Get Product ID string.
+\param str Pointer to buffer to store the string.
+\return String length.
+*/
+__STATIC_INLINE uint8_t DAP_GetProductString (char *str) {
+	memcpy((unsigned char*)str, "XV-Link CMSIS-DAP", sizeof("XV-Link CMSIS-DAP"));
+	return sizeof("XV-Link CMSIS-DAP");
+}
+
+/** Get Serial Number string.
+\param str Pointer to buffer to store the string.
+\return String length.
+*/
+__STATIC_INLINE uint8_t DAP_GetSerNumString (char *str) {
+    memcpy((unsigned char*)str, "002201110000", sizeof("002201110000"));
+	return sizeof("002201110000");
+}
+
+/** Get firmware version string.
+\param str Pointer to buffer to store the string.
+\return String length.
+*/
+__STATIC_INLINE uint8_t DAP_ProductFirmwareVerString (char *str) {
+    memcpy((unsigned char*)str, "V1.0", sizeof("V1.0"));
+	return sizeof("V1.0");
 }
 
 

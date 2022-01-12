@@ -34,7 +34,7 @@ typedef struct {
 	uint16_t tx_head;
 	uint16_t tx_tail;
 	
-	uint16_t hw_flow;			// BYTE0: DTR(Data Terminal Ready) , BYTE1: RTS(Request To Send)
+	uint16_t hw_flow;			// BIT0: DTR(Data Terminal Ready) , BIT1: RTS(Request To Send)
 	
 	uint8_t  in_buff[64];
 	uint16_t in_bytes;

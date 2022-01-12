@@ -34,9 +34,6 @@ extern uint32_t Flash_Page_Size;
 #define MAX_SWD_RETRY 10
 #define MAX_TIMEOUT   1000000  // Timeout for syscalls on target
 
-#define SCB_AIRCR_PRIGROUP_Pos              8
-#define SCB_AIRCR_PRIGROUP_Msk             (7UL << SCB_AIRCR_PRIGROUP_Pos)
-
 
 typedef struct {
     uint32_t select;

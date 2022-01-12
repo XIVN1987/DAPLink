@@ -213,7 +213,7 @@ void USBD_GetDescriptor(void)
     /* Get BOS Descriptor */
     case DESC_BOS:
     {
-        u32Len = USBD_Minimum(u32Len, LEN_BOS+LEN_BOSCAP);
+        u32Len = USBD_Minimum(u32Len, g_usbd_sInfo->gu8BosDesc[2] + (g_usbd_sInfo->gu8BosDesc[3] << 8));
         USBD_PrepareCtrlIn((uint8_t *)g_usbd_sInfo->gu8BosDesc, u32Len);
         break;
     }
@@ -240,7 +240,7 @@ void USBD_GetDescriptor(void)
     case DESC_STRING:
     {
         /* Get String Descriptor */
-        if(g_usbd_SetupPacket[2] < 4ul)
+        if(g_usbd_SetupPacket[2] < 5ul)
         {
             u32Len = USBD_Minimum(u32Len, g_usbd_sInfo->gu8StringDesc[g_usbd_SetupPacket[2]][0]);
             USBD_PrepareCtrlIn((uint8_t *)g_usbd_sInfo->gu8StringDesc[g_usbd_SetupPacket[2]], u32Len);

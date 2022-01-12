@@ -414,14 +414,14 @@
               <FilePath>.\src\DAP\DAP.c</FilePath>
             </File>
             <File>
-              <FileName>SW_DP.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\DAP\SW_DP.c</FilePath>
-            </File>
-            <File>
               <FileName>JTAG_DP.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\DAP\JTAG_DP.c</FilePath>
+            </File>
+            <File>
+              <FileName>SW_DP.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\DAP\SW_DP.c</FilePath>
             </File>
             <File>
               <FileName>SWO.c</FileName>

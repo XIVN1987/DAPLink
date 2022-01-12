@@ -120,7 +120,7 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>DLGUARM</Key>
-          <Name></Name>
+          <Name>?}w鳻??}w鳻?</Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -269,7 +269,7 @@
 
   <Group>
     <GroupName>DAP</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -292,8 +292,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>.\src\DAP\SW_DP.c</PathWithFileName>
-      <FilenameWithoutPath>SW_DP.c</FilenameWithoutPath>
+      <PathWithFileName>.\src\DAP\JTAG_DP.c</PathWithFileName>
+      <FilenameWithoutPath>JTAG_DP.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -304,8 +304,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>.\src\DAP\JTAG_DP.c</PathWithFileName>
-      <FilenameWithoutPath>JTAG_DP.c</FilenameWithoutPath>
+      <PathWithFileName>.\src\DAP\SW_DP.c</PathWithFileName>
+      <FilenameWithoutPath>SW_DP.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>

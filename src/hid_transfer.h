@@ -3,7 +3,14 @@
 
 
 #define USBD_VID	0x0416
+#ifdef DAP_FW_V1
 #define USBD_PID    0x5021
+#else
+#define USBD_PID    0x7687
+#endif
+
+
+#define WINUSB_VENDOR_CODE	0x34
 
 
 /* Define the EP number */
@@ -48,6 +55,8 @@
 void HID_Init(void);
 void HID_ClassRequest(void);
 uint8_t usbd_hid_process(void);
+
+void WINUSB_VendorRequest(void);
 
 void HID_SetInReport(void);
 void HID_GetOutReport(uint8_t *pu8EpBuf, uint32_t u32Size);

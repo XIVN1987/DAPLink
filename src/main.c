@@ -5,6 +5,12 @@
 #include "DAP.h"
 
 
+/* 在 Option 弹窗的 C/C++ 页中：
+   定义 DAP_FW_V1：   生成 CMSIS-DAP v1 固件，使用 HID 传输协议
+   不定义 DAP_FW_V1： 生成 CMSIS-DAP v2 固件，使用 WINUSB 传输协议
+*/
+
+
 void systemInit(void);
 void USB_Config(void);
 
@@ -15,6 +21,8 @@ int main(void)
 	DAP_Setup();
 	
 	USB_Config();
+	
+	SysTick_Config(CyclesPerUs * 1000);				// 1ms interrupt
 	
 	GPIO_SetMode(PC, (1 << 0), GPIO_MODE_OUTPUT);	// PC0 => UART RXD 状态指示
 	GPIO_SetMode(PC, (1 << 1), GPIO_MODE_OUTPUT);	// PC1 => UART TXD 状态指示
@@ -70,6 +78,8 @@ void USB_Config(void)
 	
 	
     USBD_Open(&gsInfo, HID_ClassRequest, NULL);
+	
+	USBD_SetVendorRequest(WINUSB_VendorRequest);
     
     HID_Init();
 	
@@ -78,4 +88,12 @@ void USB_Config(void)
     USBD_Start();
 
     NVIC_EnableIRQ(USBD_IRQn);
+}
+
+
+uint32_t SysTick_Count = 0;
+
+void SysTick_Handler(void)
+{
+	SysTick_Count++;
 }

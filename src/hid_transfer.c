@@ -189,9 +189,7 @@ void HID_ClassRequest(void)
 			break;
 		
 		case GET_LINE_CODE:
-            USBD_MemCopy((uint8_t *)(USBD_BUF_BASE + USBD_GET_EP_BUF_ADDR(EP0)), (uint8_t *)&LineCfg, 7);
-            USBD_SET_DATA1(EP0);
-            USBD_SET_PAYLOAD_LEN(EP0, 7);
+			USBD_PrepareCtrlIn((uint8_t *)&LineCfg, 7);
 
             /* Status stage */
             USBD_PrepareCtrlOut(0,0);
@@ -251,6 +249,39 @@ void HID_ClassRequest(void)
 }
 
 
+extern uint8_t MS_OS_20_DescriptorSet[];
+void WINUSB_VendorRequest(void)
+{
+	uint16_t len;
+	uint8_t buf[8];
+
+    USBD_GetSetupPacket(buf);
+	
+    if(buf[0] & 0x80) 	// Device to host
+    {
+        switch(buf[1])
+        {
+		case WINUSB_VENDOR_CODE:
+			switch(buf[4])
+			{
+			case 7:
+				len = USBD_Minimum(buf[6] | (buf[7] << 8), MS_OS_20_DescriptorSet[8] | (MS_OS_20_DescriptorSet[9] << 8));
+				USBD_PrepareCtrlIn(MS_OS_20_DescriptorSet, len);
+				
+				/* Status stage */
+				USBD_PrepareCtrlOut(0,0);
+				return;
+			}
+        }
+    }
+    else				// Host to device
+    {
+    }
+	
+	USBD_SetStall(0);
+}
+
+
 /***************************************************************/
 #include "DAP_Config.h"
 #include "DAP.h"
@@ -266,6 +297,7 @@ static volatile uint32_t USB_ResponseOut;       // Response Buffer Out Index
 
 static uint8_t  USB_Request [DAP_PACKET_COUNT][DAP_PACKET_SIZE];  // Request  Buffer
 static uint8_t  USB_Response[DAP_PACKET_COUNT][DAP_PACKET_SIZE];  // Response Buffer
+static uint16_t USB_ResponseSize[DAP_PACKET_COUNT];				  // number of bytes in response
 
 
 uint8_t usbd_hid_process(void)
@@ -274,7 +306,7 @@ uint8_t usbd_hid_process(void)
 
 	if((USB_RequestOut != USB_RequestIn) || USB_RequestFlag)
 	{
-		DAP_ProcessCommand(USB_Request[USB_RequestOut], USB_Response[USB_ResponseIn]);
+		USB_ResponseSize[USB_ResponseIn] = DAP_ProcessCommand(USB_Request[USB_RequestOut], USB_Response[USB_ResponseIn]);
 
 		// Update request index and flag
 		n = USB_RequestOut + 1;
@@ -289,8 +321,13 @@ uint8_t usbd_hid_process(void)
 		{
 			USB_ResponseIdle = 0;
 			
+#ifdef DAP_FW_V1
 			USBD_MemCopy((uint8_t *)(USBD_BUF_BASE + USBD_GET_EP_BUF_ADDR(EP2)), USB_Response[USB_ResponseIn], DAP_PACKET_SIZE);
 			USBD_SET_PAYLOAD_LEN(EP2, DAP_PACKET_SIZE);
+#else
+			USBD_MemCopy((uint8_t *)(USBD_BUF_BASE + USBD_GET_EP_BUF_ADDR(EP2)), USB_Response[USB_ResponseIn], USB_ResponseSize[USB_ResponseIn]);
+			USBD_SET_PAYLOAD_LEN(EP2, USB_ResponseSize[USB_ResponseIn]);
+#endif
 		}
 		else
 		{
@@ -336,8 +373,13 @@ void HID_SetInReport(void)
 {
 	if((USB_ResponseOut != USB_ResponseIn) || USB_ResponseFlag)
 	{
+#ifdef DAP_FW_V1
 		USBD_MemCopy((uint8_t *)(USBD_BUF_BASE + USBD_GET_EP_BUF_ADDR(EP2)), USB_Response[USB_ResponseOut], DAP_PACKET_SIZE);
         USBD_SET_PAYLOAD_LEN(EP2, DAP_PACKET_SIZE);
+#else
+		USBD_MemCopy((uint8_t *)(USBD_BUF_BASE + USBD_GET_EP_BUF_ADDR(EP2)), USB_Response[USB_ResponseOut], USB_ResponseSize[USB_ResponseOut]);
+        USBD_SET_PAYLOAD_LEN(EP2, USB_ResponseSize[USB_ResponseOut]);
+#endif
 		
 		USB_ResponseOut++;
 		if (USB_ResponseOut == DAP_PACKET_COUNT)
