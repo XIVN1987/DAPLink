@@ -42,6 +42,23 @@ void HID_Init(void)
     USBD_SET_EP_BUF_ADDR(EP6, EP6_BUF_BASE);
     /* trigger receive OUT data */
     USBD_SET_PAYLOAD_LEN(EP6, EP6_MAX_PKT_SIZE);
+	
+#if VCOM_COUNT > 1
+	/*****************************************************/
+	/* EP7 ==> Interrupt IN endpoint, address 4 */
+    USBD_CONFIG_EP(EP7, USBD_CFG_EPMODE_IN | CDC2_INT_IN_EP);
+    USBD_SET_EP_BUF_ADDR(EP7, EP7_BUF_BASE);
+	
+    /* EP8 ==> Bulk IN endpoint, address 5 */
+    USBD_CONFIG_EP(EP8, USBD_CFG_EPMODE_IN | CDC2_BULK_IN_EP);
+    USBD_SET_EP_BUF_ADDR(EP8, EP8_BUF_BASE);
+
+    /* EP9 ==> Bulk Out endpoint, address 5 */
+    USBD_CONFIG_EP(EP9, USBD_CFG_EPMODE_OUT | CDC2_BULK_OUT_EP);
+    USBD_SET_EP_BUF_ADDR(EP9, EP9_BUF_BASE);
+    /* trigger receive OUT data */
+    USBD_SET_PAYLOAD_LEN(EP9, EP9_MAX_PKT_SIZE);
+#endif
 }
 
 
@@ -132,7 +149,16 @@ void USBD_IRQHandler(void)
 			extern uint8_t g_usbd_SetupPacket[];
             if(g_usbd_SetupPacket[1] == SET_LINE_CODE)
             {
-				VCOM_LineCoding();
+				switch(g_usbd_SetupPacket[4])	// Interface number
+                {
+				case 1:
+                    VCOM_LineCoding(UART2, &LineCfg, &Vcom);
+					break;
+				
+				case 3:
+					VCOM_LineCoding(UART1, &LineCfg2, &Vcom2);
+					break;
+				}
             }
         }
 
@@ -168,6 +194,25 @@ void USBD_IRQHandler(void)
 			
             EP6_Handler();
         }
+		
+		if(u32IntSts & USBD_INTSTS_EP7)
+        {
+            USBD_CLR_INT_FLAG(USBD_INTSTS_EP7);
+        }
+
+        if(u32IntSts & USBD_INTSTS_EP8)			// Bulk IN
+        {
+            USBD_CLR_INT_FLAG(USBD_INTSTS_EP8);
+			
+            EP8_Handler();
+        }
+
+        if(u32IntSts & USBD_INTSTS_EP9)			// Bulk OUT
+        {
+            USBD_CLR_INT_FLAG(USBD_INTSTS_EP9);
+			
+            EP9_Handler();
+        }
     }
 }
 
@@ -189,7 +234,16 @@ void HID_ClassRequest(void)
 			break;
 		
 		case GET_LINE_CODE:
-			USBD_PrepareCtrlIn((uint8_t *)&LineCfg, 7);
+			switch(buf[4])	// Interface number
+            {
+			case 1:
+                USBD_PrepareCtrlIn((uint8_t *)&LineCfg, 7);
+				break;
+			
+			case 3:
+				USBD_PrepareCtrlIn((uint8_t *)&LineCfg2, 7);
+				break;
+			}
 
             /* Status stage */
             USBD_PrepareCtrlOut(0,0);
@@ -225,7 +279,16 @@ void HID_ClassRequest(void)
             break;
 		
 		case SET_LINE_CODE:
-            USBD_PrepareCtrlOut((uint8_t *)&LineCfg, 7);
+            switch(buf[4])	// Interface number
+			{
+			case 1:
+                USBD_PrepareCtrlOut((uint8_t *)&LineCfg, 7);
+				break;
+			
+			case 3:
+				USBD_PrepareCtrlOut((uint8_t *)&LineCfg2, 7);
+				break;
+			}
             
             /* Status stage */
             USBD_SET_DATA1(EP0);
@@ -233,7 +296,16 @@ void HID_ClassRequest(void)
             break;
 		
 		case SET_CONTROL_LINE:
-			Vcom.hw_flow = (buf[3] << 8) | buf[2];
+			switch(buf[4])  // Interface number
+			{
+			case 1:
+				Vcom.hw_flow = (buf[3] << 8) | buf[2];
+				break;
+
+			case 3:
+				Vcom2.hw_flow = (buf[3] << 8) | buf[2];
+				break;
+			}
 			
             /* Status stage */
             USBD_SET_DATA1(EP0);

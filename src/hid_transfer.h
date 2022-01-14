@@ -2,11 +2,14 @@
 #define __HID_TRANSFER_H__
 
 
+#define VCOM_COUNT	1	// 1 or 2
+
+
 #define USBD_VID	0x0416
 #ifdef DAP_FW_V1
-#define USBD_PID    0x5021
+#define USBD_PID    (0x5021 + (VCOM_COUNT - 1))
 #else
-#define USBD_PID    0x7687
+#define USBD_PID    (0x7687 + (VCOM_COUNT - 1))
 #endif
 
 
@@ -19,6 +22,9 @@
 #define CDC_INT_IN_EP     	2
 #define CDC_BULK_IN_EP    	3
 #define CDC_BULK_OUT_EP   	3
+#define CDC2_INT_IN_EP     	4
+#define CDC2_BULK_IN_EP    	5
+#define CDC2_BULK_OUT_EP   	5
 
 
 /* Define EP maximum packet size */
@@ -29,7 +35,9 @@
 #define EP4_MAX_PKT_SIZE    8
 #define EP5_MAX_PKT_SIZE    64
 #define EP6_MAX_PKT_SIZE    64
-
+#define EP7_MAX_PKT_SIZE    8
+#define EP8_MAX_PKT_SIZE    64
+#define EP9_MAX_PKT_SIZE    64
 
 #define SETUP_BUF_BASE  	0
 #define SETUP_BUF_SIZE   	8
@@ -40,6 +48,9 @@
 #define EP4_BUF_BASE        (EP3_BUF_BASE + EP3_MAX_PKT_SIZE)
 #define EP5_BUF_BASE        (EP4_BUF_BASE + EP4_MAX_PKT_SIZE)
 #define EP6_BUF_BASE        (EP5_BUF_BASE + EP5_MAX_PKT_SIZE)
+#define EP7_BUF_BASE        (EP6_BUF_BASE + EP6_MAX_PKT_SIZE)
+#define EP8_BUF_BASE        (EP7_BUF_BASE + EP7_MAX_PKT_SIZE)
+#define EP9_BUF_BASE        (EP8_BUF_BASE + EP8_MAX_PKT_SIZE)
 
 
 /* HID Class Specific Request */

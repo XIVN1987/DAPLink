@@ -16,7 +16,7 @@ typedef struct __attribute__((packed)) {
     uint8_t  u8DataBits;     	// data bits: 5, 6, 7, 8, 16
 } VCOM_LINE_CODING;
 
-extern VCOM_LINE_CODING LineCfg;
+extern VCOM_LINE_CODING LineCfg, LineCfg2;
 
 
 
@@ -43,7 +43,7 @@ typedef struct {
 	uint16_t out_ready;
 } VCOM;
 
-extern volatile VCOM Vcom;
+extern volatile VCOM Vcom, Vcom2;
 
 
 
@@ -51,8 +51,10 @@ void VCOM_Init(void);
 
 void EP5_Handler(void);
 void EP6_Handler(void);
+void EP8_Handler(void);
+void EP9_Handler(void);
 
-void VCOM_LineCoding(void);
+void VCOM_LineCoding(UART_T * UARTx, VCOM_LINE_CODING * LineCfgx, volatile VCOM * Vcomx);
 void VCOM_TransferData(void);
 
 
