@@ -124,7 +124,7 @@ void VCOM_LineCoding(UART_T * UARTx, VCOM_LINE_CODING * LineCfgx, volatile VCOM 
 }
 
 
-void UARTX_IRQHandler(UART_T * UARTx, volatile VCOM * vcomx)
+void UARTX_IRQHandler(UART_T * UARTx, volatile VCOM * Vcomx)
 {
     uint8_t chr;
     int32_t size;
@@ -135,22 +135,22 @@ void UARTX_IRQHandler(UART_T * UARTx, volatile VCOM * vcomx)
         {
             chr = UARTx->DAT;
 
-            if(vcomx->rx_bytes < RX_BUFF_SIZE)  // Check if buffer full
+            if(Vcomx->rx_bytes < RX_BUFF_SIZE)  // Check if buffer full
             {
-                vcomx->rx_buff[vcomx->rx_tail++] = chr;
-                if(vcomx->rx_tail >= RX_BUFF_SIZE)
-                    vcomx->rx_tail = 0;
-                vcomx->rx_bytes++;
+                Vcomx->rx_buff[Vcomx->rx_tail++] = chr;
+                if(Vcomx->rx_tail >= RX_BUFF_SIZE)
+                    Vcomx->rx_tail = 0;
+                Vcomx->rx_bytes++;
             }
         }
     }
 
     if(UARTx->INTSTS & UART_INTSTS_THREIF_Msk)
     {
-        if(vcomx->tx_bytes)
+        if(Vcomx->tx_bytes)
         {
             /* Fill the Tx FIFO */
-            size = vcomx->tx_bytes;
+            size = Vcomx->tx_bytes;
             if(size >= TX_FIFO_SIZE)
             {
                 size = TX_FIFO_SIZE;
@@ -158,10 +158,10 @@ void UARTX_IRQHandler(UART_T * UARTx, volatile VCOM * vcomx)
 
             while(size)
             {
-                UARTx->DAT = vcomx->tx_buff[vcomx->tx_head++];
-                if(vcomx->tx_head >= TX_BUFF_SIZE)
-                    vcomx->tx_head = 0;
-                vcomx->tx_bytes--;
+                UARTx->DAT = Vcomx->tx_buff[Vcomx->tx_head++];
+                if(Vcomx->tx_head >= TX_BUFF_SIZE)
+                    Vcomx->tx_head = 0;
+                Vcomx->tx_bytes--;
                 size--;
             }
         }
@@ -187,79 +187,79 @@ void UART1_IRQHandler(void)
 
 
 
-void VCOMX_TransferData(volatile VCOM * vcomx, UART_T * UARTx, uint32_t INEP, uint32_t INEP_PKT_SIZE, uint32_t OUTEP, uint32_t OUTEP_PKT_SIZE)
+void VCOMX_TransferData(volatile VCOM * Vcomx, UART_T * UARTx, uint32_t InEP, uint32_t InEP_MAX_PKT_SIZE, uint32_t OutEP, uint32_t OutEP_MAX_PKT_SIZE)
 {
     int32_t i, len;
 
     /* Check whether USB is ready for next packet or not */
-    if(vcomx->in_bytes == 0)
+    if(Vcomx->in_bytes == 0)
     {
         /* Check whether we have new COM Rx data to send to USB or not */
-        if(vcomx->rx_bytes)
+        if(Vcomx->rx_bytes)
         {
-            len = vcomx->rx_bytes;
-            if(len > INEP_PKT_SIZE)
-                len = INEP_PKT_SIZE;
+            len = Vcomx->rx_bytes;
+            if(len > InEP_MAX_PKT_SIZE)
+                len = InEP_MAX_PKT_SIZE;
 
             for(i = 0; i < len; i++)
             {
-                vcomx->in_buff[i] = vcomx->rx_buff[vcomx->rx_head++];
-                if(vcomx->rx_head >= RX_BUFF_SIZE)
-                    vcomx->rx_head = 0;
+                Vcomx->in_buff[i] = Vcomx->rx_buff[Vcomx->rx_head++];
+                if(Vcomx->rx_head >= RX_BUFF_SIZE)
+                    Vcomx->rx_head = 0;
             }
 
             __disable_irq();
-            vcomx->rx_bytes -= len;
+            Vcomx->rx_bytes -= len;
             __enable_irq();
 
-            vcomx->in_bytes = len;
-            USBD_MemCopy((uint8_t *)(USBD_BUF_BASE + USBD_GET_EP_BUF_ADDR(INEP)), (uint8_t *)vcomx->in_buff, len);
-            USBD_SET_PAYLOAD_LEN(INEP, len);
+            Vcomx->in_bytes = len;
+            USBD_MemCopy((uint8_t *)(USBD_BUF_BASE + USBD_GET_EP_BUF_ADDR(InEP)), (uint8_t *)Vcomx->in_buff, len);
+            USBD_SET_PAYLOAD_LEN(InEP, len);
         }
         else
         {
-            /* Prepare a zero packet if previous packet size is EP2_MAX_PKT_SIZE and
+            /* Prepare a zero packet if previous packet size is InEP_MAX_PKT_SIZE and
                no more data to send at this moment to note Host the transfer has been done */
-            len = USBD_GET_PAYLOAD_LEN(INEP);
-            if(len == INEP_PKT_SIZE)
-                USBD_SET_PAYLOAD_LEN(INEP, 0);
+            len = USBD_GET_PAYLOAD_LEN(InEP);
+            if(len == InEP_MAX_PKT_SIZE)
+                USBD_SET_PAYLOAD_LEN(InEP, 0);
         }
     }
 
     /* Process the Bulk out data when bulk out data is ready. */
-    if(vcomx->out_ready && (vcomx->out_bytes <= TX_BUFF_SIZE - vcomx->tx_bytes))
+    if(Vcomx->out_ready && (Vcomx->out_bytes <= TX_BUFF_SIZE - Vcomx->tx_bytes))
     {
-        for(i = 0; i < vcomx->out_bytes; i++)
+        for(i = 0; i < Vcomx->out_bytes; i++)
         {
-            vcomx->tx_buff[vcomx->tx_tail++] = vcomx->out_ptr[i];
-            if(vcomx->tx_tail >= TX_BUFF_SIZE)
-                vcomx->tx_tail = 0;
+            Vcomx->tx_buff[Vcomx->tx_tail++] = Vcomx->out_ptr[i];
+            if(Vcomx->tx_tail >= TX_BUFF_SIZE)
+                Vcomx->tx_tail = 0;
         }
 
         __disable_irq();
-        vcomx->tx_bytes += vcomx->out_bytes;
+        Vcomx->tx_bytes += Vcomx->out_bytes;
         __enable_irq();
 
-        vcomx->out_bytes = 0;
-        vcomx->out_ready = 0; /* Clear bulk out ready flag */
+        Vcomx->out_bytes = 0;
+        Vcomx->out_ready = 0; /* Clear bulk out ready flag */
 
         /* Ready to get next BULK out */
-        USBD_SET_PAYLOAD_LEN(OUTEP, OUTEP_PKT_SIZE);
+        USBD_SET_PAYLOAD_LEN(OutEP, OutEP_MAX_PKT_SIZE);
     }
 
     /* Process the software Tx FIFO */
-    if(vcomx->tx_bytes)
+    if(Vcomx->tx_bytes)
     {
         /* Check if Tx is working */
         if((UARTx->INTEN & UART_INTEN_THREIEN_Msk) == 0)
         {
             /* Send one bytes out */
-            UARTx->DAT = vcomx->tx_buff[vcomx->tx_head++];
-            if(vcomx->tx_head >= TX_BUFF_SIZE)
-                vcomx->tx_head = 0;
+            UARTx->DAT = Vcomx->tx_buff[Vcomx->tx_head++];
+            if(Vcomx->tx_head >= TX_BUFF_SIZE)
+                Vcomx->tx_head = 0;
 
             __disable_irq();
-            vcomx->tx_bytes--;
+            Vcomx->tx_bytes--;
             __enable_irq();
 
             /* Enable Tx Empty Interrupt. (Trigger first one) */
