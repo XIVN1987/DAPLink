@@ -1,4 +1,8 @@
 out/
+DAPLink.uvguix.*
+JLinkLog.txt
+JLinkSettings.ini
+EventRecorderStub.scvd
 
 # Prerequisites
 *.d
