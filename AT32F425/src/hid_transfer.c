@@ -97,7 +97,6 @@ static usb_sts_type class_setup_handler(void *udev, usb_setup_type *setup)
 			break;
 		
 		default:
-			usbd_ctrl_unsupport(usbd);
 			break;
 		}
 		break;
@@ -175,9 +174,7 @@ static usb_sts_type class_ept0_rx_handler(void *udev)
   * @retval status of usb_sts_type
   */
 static usb_sts_type class_in_handler(void *udev, uint8_t ept_num)
-{
-	usbd_core_type *usbd = (usbd_core_type *)udev;
-	
+{	
 	switch(0x80 | ept_num)
 	{
 	case HID_INT_IN_EP:

@@ -9,10 +9,10 @@
 
 
 #define USBD_RX_SIZE    	128
-#define USBD_EP0_TX_SIZE	64
-#define USBD_EP1_TX_SIZE	64
-#define USBD_EP2_TX_SIZE	64
-#define USBD_EP3_TX_SIZE	64
+#define USBD_EP0_TX_SIZE	24
+#define USBD_EP1_TX_SIZE	20
+#define USBD_EP2_TX_SIZE	20
+#define USBD_EP3_TX_SIZE	20
 #define USBD_EP4_TX_SIZE	20
 #define USBD_EP5_TX_SIZE	20
 #define USBD_EP6_TX_SIZE	20
