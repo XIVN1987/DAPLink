@@ -1622,7 +1622,7 @@ __WEAK uint32_t DAP_ProcessVendorCommand(const uint8_t *request, uint8_t *respon
 //   response: pointer to response data
 //   return:   number of bytes in response (lower 16 bits)
 //             number of bytes in request (upper 16 bits)
-__weak uint32_t DAP_ProcessVendorCommandEx(const uint8_t *request, uint8_t *response) {
+__WEAK uint32_t DAP_ProcessVendorCommandEx(const uint8_t *request, uint8_t *response) {
   *response = ID_DAP_Invalid;
   return ((1U << 16) | 1U);
 }

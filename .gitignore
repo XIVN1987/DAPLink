@@ -1,3 +1,5 @@
+.settings/
+obj/
 out/
 DAPLink.uvguix.*
 JLinkLog.txt
