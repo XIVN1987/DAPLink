@@ -116,21 +116,6 @@ void USART2_IRQHandler(void)
 }
 
 
-void VCOM_InComplete(void)
-{
-    Vcom.in_ready = 1;
-}
-
-
-void VCOM_GetOutData(uint8_t * buf, uint32_t len)
-{
-	Vcom.out_pbuf  = buf;
-    Vcom.out_bytes = len;
-
-    Vcom.out_ready = 1;
-}
-
-
 extern otg_core_type Otg;
 
 void VCOM_TransferData(void)
@@ -175,7 +160,7 @@ void VCOM_TransferData(void)
     {
         for(int i = 0; i < Vcom.out_bytes; i++)
         {
-            Vcom.tx_buff[Vcom.tx_wrptr++] = Vcom.out_pbuf[i];
+            Vcom.tx_buff[Vcom.tx_wrptr++] = Vcom.out_buff[i];
             if(Vcom.tx_wrptr >= TX_BUFF_SIZE)
                 Vcom.tx_wrptr = 0;
         }
@@ -187,8 +172,7 @@ void VCOM_TransferData(void)
         Vcom.out_ready = 0;
 
         /* Ready for next BULK OUT */
-		extern uint8_t cdc_rx_buff[64];
-        usbd_ept_recv(&Otg.dev, CDC_BULK_OUT_EP, cdc_rx_buff, CDC_BULK_OUT_SZ);
+        usbd_ept_recv(&Otg.dev, CDC_BULK_OUT_EP, (uint8_t *)Vcom.out_buff, CDC_BULK_OUT_SZ);
     }
 
     if((Vcom.tx_bytes) && (USART2->ctrl1_bit.tdbeien == 0))

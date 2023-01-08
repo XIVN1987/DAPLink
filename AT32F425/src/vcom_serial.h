@@ -20,7 +20,7 @@ typedef struct {
 	uint8_t  in_buff[64] __attribute__((aligned(4)));
 	uint16_t in_bytes;
 	uint16_t in_ready;
-	uint8_t *out_pbuf;
+	uint8_t  out_buff[64];
 	uint16_t out_bytes;
 	uint16_t out_ready;
 } VCOM;
@@ -41,10 +41,6 @@ extern VCOM_LINE_CODING LineCfg;
 void VCOM_Init(void);
 void VCOM_TransferData(void);
 void VCOM_LineCoding(VCOM_LINE_CODING * LineCfgx);
-
-
-void VCOM_InComplete(void);
-void VCOM_GetOutData(uint8_t * buf, uint32_t len);
 
 
 #endif // __VCOM_SERIAL_H__

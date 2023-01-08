@@ -28,7 +28,7 @@ DAPLink (CMSIS-DAP) based on WCH CH32V203 (support crystal-less USB), supports S
 | LED_SWD  | PA.4  |
 
 ## DAPLink-M480
-DAPLink (CMSIS-DAP) based on Nuvoton M480, supports SWD and CDC (1 or 2).
+DAPLink (CMSIS-DAP) based on Nuvoton M480, supports SWD and CDC.
 
 In the C/C++ page of Keil Option Window:
 * Define `DAP_FW_V1`: generate CMSIS-DAP V1 firmware, using HID transport protocol.
@@ -45,9 +45,3 @@ In the C/C++ page of Keil Option Window:
 | LED_SWD  | PA.2  |
 | LED_TXD  | PC.1  |
 | LED_RXD  | PC.0  |
-
-### Optional CDC2
-|  FUNC    | Pin   |
-|  :----   | :---- |
-| CDC2_TXD | PB.3  |
-| CDC2_RXD | PB.2  |

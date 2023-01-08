@@ -21,9 +21,7 @@ int main(void)
 	DAP_Setup();
 	
 	USB_Config();
-	
-	SysTick_Config(CyclesPerUs * 1000);				// 1ms interrupt
-	
+		
 	GPIO_SetMode(PC, (1 << 0), GPIO_MODE_OUTPUT);	// PC0 => UART RXD ״ָ̬ʾ
 	GPIO_SetMode(PC, (1 << 1), GPIO_MODE_OUTPUT);	// PC1 => UART TXD ״ָ̬ʾ
 	
@@ -88,12 +86,4 @@ void USB_Config(void)
     USBD_Start();
 
     NVIC_EnableIRQ(USBD_IRQn);
-}
-
-
-uint32_t SysTick_Count = 0;
-
-void SysTick_Handler(void)
-{
-	SysTick_Count++;
 }

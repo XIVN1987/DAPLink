@@ -9,7 +9,6 @@
 static usb_setup_type Setup;
 
 static uint8_t hid_rx_buff[64];
-uint8_t cdc_rx_buff[64];
 
 
 /**
@@ -37,7 +36,7 @@ static usb_sts_type class_init_handler(void *udev)
 	usbd_ept_open(usbd, CDC_BULK_IN_EP,  EPT_BULK_TYPE, CDC_BULK_IN_SZ);
 	usbd_ept_open(usbd, CDC_BULK_OUT_EP, EPT_BULK_TYPE, CDC_BULK_OUT_SZ);
 
-	usbd_ept_recv(usbd, CDC_BULK_OUT_EP, cdc_rx_buff, CDC_BULK_OUT_SZ);
+	usbd_ept_recv(usbd, CDC_BULK_OUT_EP, (uint8_t *)Vcom.out_buff, CDC_BULK_OUT_SZ);
 
 	return USB_OK;
 }
@@ -182,7 +181,7 @@ static usb_sts_type class_in_handler(void *udev, uint8_t ept_num)
 		break;
 	
 	case CDC_BULK_IN_EP:
-		VCOM_InComplete();
+		Vcom.in_ready = 1;
 		break;
 	}
 	
@@ -212,7 +211,8 @@ static usb_sts_type class_out_handler(void *udev, uint8_t ept_num)
 			break;
 		
 		case CDC_BULK_OUT_EP:
-			VCOM_GetOutData(cdc_rx_buff, recv_len);
+			Vcom.out_bytes = recv_len;
+			Vcom.out_ready = 1;
 			break;
 	}
 
