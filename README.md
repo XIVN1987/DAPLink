@@ -1,5 +1,5 @@
 # DAPLink
-DAPLink (CMSIS-DAP) porting to Artery AT32F425, WCH CH32V203 and Nuvoton M480.
+DAPLink (CMSIS-DAP) porting to Artery AT32F425, WCH CH32V203, WCH CH32V305 and Nuvoton M480.
 
 ## DAPLink-AT32F425
 DAPLink (CMSIS-DAP) based on Artery AT32F425 (support crystal-less USB), supports SWD and CDC.
@@ -16,6 +16,19 @@ DAPLink (CMSIS-DAP) based on Artery AT32F425 (support crystal-less USB), support
 
 ## DAPLink-CH32V203
 DAPLink (CMSIS-DAP) based on WCH CH32V203 (support crystal-less USB), supports SWD and CDC.
+
+### Pin map
+|  FUNC    | Pin   |
+|  :----   | :---- |
+| SWD_CLK  | PA.1  |
+| SWD_DIO  | PA.0  |
+| SWD_RST  | PA.7  |
+| CDC_TXD  | PA.2  |
+| CDC_RXD  | PA.3  |
+| LED_SWD  | PA.4  |
+
+## DAPLink-CH32V305
+DAPLink (CMSIS-DAP) based on WCH CH32V305 (High Speed USB with on-chip PHY), supports SWD and CDC.
 
 ### Pin map
 |  FUNC    | Pin   |
