@@ -7,7 +7,7 @@
 #include "vcom_serial.h"
 
 
-volatile VCOM Vcom = {.in_ready = 1};
+volatile VCOM Vcom;
 
 VCOM_LINE_CODING LineCfg = {115200, 0, 0, 8};   // Baud rate, stop bits, parity bits, data bits
 
@@ -133,9 +133,9 @@ void USART2_IRQHandler(void)
 
 void VCOM_TransferData(void)
 {
-    if(Vcom.in_ready)		// ¿ÉÒÔÏòÖ÷»ú·¢ËÍÊı¾İ
+    if(Vcom.in_ready)		// å¯ä»¥å‘ä¸»æœºå‘é€æ•°æ®
     {
-        if(Vcom.rx_bytes)	// ÓĞĞÂµÄÊı¾İ¿ÉÒÔ·¢ËÍ
+        if(Vcom.rx_bytes)	// æœ‰æ–°çš„æ•°æ®å¯ä»¥å‘é€
         {
             Vcom.in_bytes = Vcom.rx_bytes;
             if(Vcom.in_bytes > CDC_BULK_IN_SZ_HS)
@@ -172,7 +172,7 @@ void VCOM_TransferData(void)
         }
     }
 
-	/* ´ÓÖ÷»ú½ÓÊÕµ½Êı¾İ£¬ÇÒ tx_buff ÄÜ¹»×°ÏÂËüÃÇ */
+	/* ä»ä¸»æœºæ¥æ”¶åˆ°æ•°æ®ï¼Œä¸” tx_buff èƒ½å¤Ÿè£…ä¸‹å®ƒä»¬ */
     if(Vcom.out_ready && (Vcom.out_bytes <= TX_BUFF_SIZE - Vcom.tx_bytes))
     {
         for(int i = 0; i < Vcom.out_bytes; i++)

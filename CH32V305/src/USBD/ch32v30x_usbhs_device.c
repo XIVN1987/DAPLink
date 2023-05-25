@@ -53,15 +53,16 @@ void USBHS_RCC_Init(void)
 {
     RCC_USBCLK48MConfig(RCC_USBCLK48MCLKSource_USBPHY);
 
-    RCC_USBHSPLLCLKConfig(RCC_HSBHSPLLCLKSource_HSE);       // USBHS PLL Ê±ÖÓÔ´£ºHSE
-    RCC_USBHSConfig(RCC_USBPLL_Div2);                       // USBHS PLL Ê±ÖÓÔ´½øÈë PLL Ç° 2 ·ÖÆµ
-    RCC_USBHSPLLCKREFCLKConfig(RCC_USBHSPLLCKREFCLK_4M);    // USBHS PLL Ê±ÖÓÔ´·ÖÆµºóÆµÂÊÎª 4MHz£¨Íâ½Ó¾§ÕñÎª 8MHz£©
+    RCC_USBHSPLLCLKConfig(RCC_HSBHSPLLCLKSource_HSE);       // USBHS PLL æ—¶é’Ÿæºï¼šHSE
+    RCC_USBHSConfig(RCC_USBPLL_Div2);                       // USBHS PLL æ—¶é’Ÿæºè¿›å…¥ PLL å‰ 2 åˆ†é¢‘
+    RCC_USBHSPLLCKREFCLKConfig(RCC_USBHSPLLCKREFCLK_4M);    // USBHS PLL æ—¶é’Ÿæºåˆ†é¢‘åŽé¢‘çŽ‡ä¸º 4MHzï¼ˆå¤–æŽ¥æ™¶æŒ¯ä¸º 8MHzï¼‰
     RCC_USBHSPHYPLLALIVEcmd(ENABLE);
 
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_USBHS, ENABLE);
 }
 
 
+extern volatile VCOM Vcom;
 /*********************************************************************
  * @fn      USBHS_Device_Endp_Init
  *
@@ -75,7 +76,7 @@ void USBHS_Device_Endp_Init(void)
                           USBHS_UEP2_T_EN |
                           USBHS_UEP3_T_EN | USBHS_UEP3_R_EN;
 
-    USBHSD->UEP0_MAX_LEN = USB_MAX_EP0_SZ;      // ¶Ëµã n ½ÓÊÕÊý¾ÝµÄ×î´ó°ü³¤¶È
+    USBHSD->UEP0_MAX_LEN = USB_MAX_EP0_SZ;      // ç«¯ç‚¹ n æŽ¥æ”¶æ•°æ®çš„æœ€å¤§åŒ…é•¿åº¦
     USBHSD->UEP1_MAX_LEN = HID_INT_OUT_SZ_HS;
     USBHSD->UEP3_MAX_LEN = CDC_BULK_OUT_SZ_HS;
 
@@ -101,6 +102,8 @@ void USBHS_Device_Endp_Init(void)
     USBHSD->UEP3_TX_LEN  = 0;
     USBHSD->UEP3_TX_CTRL = USBHS_UEP_T_RES_NAK;
     USBHSD->UEP3_RX_CTRL = USBHS_UEP_R_RES_ACK;
+
+    Vcom.in_ready = 1;
 }
 
 
