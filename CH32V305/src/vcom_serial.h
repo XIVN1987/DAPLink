@@ -17,10 +17,10 @@ typedef struct {
 	
 	uint16_t hw_flow;			// BIT0: DTR(Data Terminal Ready) , BIT1: RTS(Request To Send)
 	
-	uint8_t  in_buff[64];
+	uint8_t  in_buff[512];
 	uint16_t in_bytes;
 	uint16_t in_ready;
-	uint8_t  out_buff[64];
+	uint8_t  out_buff[512];
 	uint16_t out_bytes;
 	uint16_t out_ready;
 } VCOM;

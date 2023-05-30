@@ -644,8 +644,6 @@ void USBHS_IRQHandler( void )
                 USBHSD->UEP3_RX_CTRL ^= USBHS_UEP_R_TOG_DATA1;
                 USBHSD->UEP3_RX_CTRL = (USBHSD->UEP3_RX_CTRL & ~USBHS_UEP_R_RES_MASK) | USBHS_UEP_R_RES_NAK;
 
-                extern uint8_t TXBuffer[];
-                memcpy(TXBuffer, USBHS_EP3_Rx_Buf, len);
                 Vcom.out_bytes = len;
                 Vcom.out_ready = 1;
                 break;

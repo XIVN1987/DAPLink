@@ -109,15 +109,6 @@ void VCOM_LineCoding(VCOM_LINE_CODING * LineCfgx)
 
     __disable_irq();
     
-    // Reset software FIFO
-    Vcom.rx_bytes = 0;
-	Vcom.rx_wrptr = 0;
-    Vcom.rx_rdptr = 0;
-
-    Vcom.tx_bytes = 0;
-	Vcom.tx_wrptr = 0;
-    Vcom.tx_rdptr = 0;
-    
     USART_Init(USART2, &USART_InitStructure);
     
     RX_Timeout = (1000.0 / USART_InitStructure.USART_BaudRate) * (512 * 10) * 1.5;
@@ -201,10 +192,12 @@ void VCOM_TransferData(void)
     }
 
 xfer_out:
-	/* 从主机接收到数据，且 tx_buff 能够装下它们 */
+	/* 从主机接收到数据，且前面的数据 DMA 已发送完 */
     if(Vcom.out_ready && (DMA_GetCurrDataCounter(DMA1_Channel7) == 0))
     {
         Vcom.out_ready = 0;
+
+        memcpy(TXBuffer, USBHS_EP3_Rx_Buf, Vcom.out_bytes);
 
         DMA_Cmd(DMA1_Channel7, DISABLE);
         DMA_SetCurrDataCounter(DMA1_Channel7, Vcom.out_bytes);
