@@ -12,7 +12,8 @@ DAPLink (CMSIS-DAP) based on Artery AT32F425 (support crystal-less USB), support
 | SWD_RST  | PA.4  |
 | CDC_TXD  | PA.2  |
 | CDC_RXD  | PA.3  |
-| LED_SWD  | PA.5  |
+
+Sch & PCB: [https://oshwhub.com/xivn1987/daplink](https://oshwhub.com/xivn1987/daplink)
 
 ## DAPLink-CH32V203
 DAPLink (CMSIS-DAP) based on WCH CH32V203 (support crystal-less USB), supports SWD and CDC.
@@ -25,7 +26,8 @@ DAPLink (CMSIS-DAP) based on WCH CH32V203 (support crystal-less USB), supports S
 | SWD_RST  | PA.4  |
 | CDC_TXD  | PA.2  |
 | CDC_RXD  | PA.3  |
-| LED_SWD  | PA.5  |
+
+Sch & PCB: [https://oshwhub.com/xivn1987/daplink](https://oshwhub.com/xivn1987/daplink)
 
 ## DAPLink-CH32V305
 DAPLink (CMSIS-DAP) based on WCH CH32V305 (High Speed USB with on-chip PHY), supports SWD and CDC.
@@ -33,12 +35,13 @@ DAPLink (CMSIS-DAP) based on WCH CH32V305 (High Speed USB with on-chip PHY), sup
 ### Pin map
 |  FUNC    | Pin   |
 |  :----   | :---- |
-| SWD_CLK  | PA.1  |
-| SWD_DIO  | PA.0  |
-| SWD_RST  | PA.4  |
-| CDC_TXD  | PA.2  |
-| CDC_RXD  | PA.3  |
-| LED_SWD  | PA.5  |
+| SWD_CLK  | PB.13 |
+| SWD_DIO  | PB.12 |
+| SWD_RST  | PC.8  |
+| CDC_TXD  | PB.10 |
+| CDC_RXD  | PB.11 |
+
+Sch & PCB: [https://oshwhub.com/xivn1987/DAPLink-HS](https://oshwhub.com/xivn1987/DAPLink-HS)
 
 ## DAPLink-M482
 DAPLink (CMSIS-DAP) based on Nuvoton M482, supports SWD and CDC.
@@ -55,9 +58,6 @@ In the C/C++ page of Keil Option Window:
 | SWD_RST  | PF.4  |
 | CDC_TXD  | PB.1  |
 | CDC_RXD  | PB.0  |
-| LED_SWD  | PA.2  |
-| LED_TXD  | PC.1  |
-| LED_RXD  | PC.0  |
 
 ## DAPLink-M484
 DAPLink (CMSIS-DAP) based on Nuvoton M484 (High Speed USB with on-chip PHY), supports SWD and CDC.
@@ -70,6 +70,3 @@ DAPLink (CMSIS-DAP) based on Nuvoton M484 (High Speed USB with on-chip PHY), sup
 | SWD_RST  | PF.4  |
 | CDC_TXD  | PB.1  |
 | CDC_RXD  | PB.0  |
-| LED_SWD  | PA.2  |
-| LED_TXD  | PC.1  |
-| LED_RXD  | PC.0  |

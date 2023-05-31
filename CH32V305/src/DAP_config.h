@@ -71,19 +71,19 @@ DAP Hardware I/O Pin Access Functions
 
 // Configure DAP I/O pins ------------------------------
 
-#define SWCLK_PORT			GPIOA
-#define SWCLK_PIN			GPIO_Pin_1
-#define SWDIO_PORT			GPIOA
-#define SWDIO_PIN			GPIO_Pin_0
-#define SWDIO_PIN_INDEX		0
+#define SWCLK_PORT			GPIOB
+#define SWCLK_PIN			GPIO_Pin_13
+#define SWDIO_PORT			GPIOB
+#define SWDIO_PIN			GPIO_Pin_12
+#define SWDIO_PIN_INDEX		12
 
-#define SWD_RST_PORT		GPIOA
-#define SWD_RST_PIN			GPIO_Pin_4
+#define SWD_RST_PORT		GPIOC
+#define SWD_RST_PIN			GPIO_Pin_8
 
-#define LED_CONNECTED_PORT	GPIOA
-#define LED_CONNECTED_PIN	GPIO_Pin_5
-#define LED_RUNNING_PORT	GPIOA
-#define LED_RUNNING_PIN		GPIO_Pin_5
+#define LED_CONNECTED_PORT	GPIOC
+#define LED_CONNECTED_PIN	GPIO_Pin_7
+#define LED_RUNNING_PORT	GPIOC
+#define LED_RUNNING_PIN		GPIO_Pin_7
 
 
 /** Setup JTAG I/O pins: TCK, TMS, TDI, TDO, nTRST, and nRESET.
@@ -134,6 +134,7 @@ static void PORT_OFF(void)
 	
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
 
     GPIO_InitStruct.GPIO_Pin = SWCLK_PIN;
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IPD;
