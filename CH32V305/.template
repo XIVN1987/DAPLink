@@ -1,18 +1,17 @@
+Target Path=obj\DAPLink.hex
 Address=0x08000000
-Erase All=true
+Erase All=false
 Program=true
 Verify=true
 Reset=true
-
 Toolchain=RISC-V
-Series=CH32V307
-Description=ROM(byte): 256K, SRAM(byte): 64K, CHIP PINS: 64, GPIO PORTS: 51.\nWCH CH32V3 series of mainstream MCUs covers the needs of a large variety of applications in the industrial,medical and consumer markets. High performance with first-class peripherals and low-power,low-voltage operation is paired with a high level of integration at accessible prices with a simple architecture and easy-to-use tools.
-
-PeripheralVersion=1.4
-Target Path=obj/DAPLink.hex
-
+Series=CH32V305
+RTOS=NoneOS
+Description=Website: http://www.wch.cn/products/CH32V307.html?\nROM(byte): 128K, SRAM(byte): 32K, CHIP PINS: 64, GPIO PORTS: 51.\nWCH CH32V3 series of mainstream MCUs covers the needs of a large variety of applications in the industrial,medical and consumer markets. High performance with first-class peripherals and low-power,low-voltage operation is paired with a high level of integration at accessible prices with a simple architecture and easy-to-use tools.
+PeripheralVersion=2.0
+CLKSpeed=0
 
 Vendor=WCH
-MCU=CH32V307RCT6
+MCU=CH32V305FBP6
 Mcu Type=CH32V30x
 Link=WCH-Link

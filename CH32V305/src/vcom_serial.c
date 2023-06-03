@@ -11,12 +11,10 @@ volatile VCOM Vcom;
 
 VCOM_LINE_CODING LineCfg = {115200, 0, 0, 8};   // Baud rate, stop bits, parity bits, data bits
 
-volatile uint32_t RX_Timeout = (1000.0 / 115200) * (512 * 10) * 1.5;
 
-
-#define BUF_SZ  1024
-uint8_t TXBuffer[BUF_SZ] __attribute__((aligned(4)));
-uint8_t RXBuffer[BUF_SZ] __attribute__((aligned(4)));
+#define RXDMA_SZ  (CDC_BULK_IN_SZ_HS * 2)
+uint8_t RXBuffer[RXDMA_SZ] __attribute__((aligned(4)));
+uint8_t TXBuffer[CDC_BULK_OUT_SZ_HS] __attribute__((aligned(4)));
 
 
 void VCOM_Init(void)
@@ -29,10 +27,9 @@ void VCOM_Init(void)
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
     RCC_AHBPeriphClockCmd (RCC_AHBPeriph_DMA1, ENABLE);
 
-
     GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_10;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF_PP;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOB, &GPIO_InitStructure);              // PB10 => USART3_TX
 
     GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_11;
@@ -48,14 +45,23 @@ void VCOM_Init(void)
     DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
     DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
     DMA_InitStructure.DMA_BufferSize = 0;
-    DMA_InitStructure.DMA_Priority = DMA_Priority_Medium;
+    DMA_InitStructure.DMA_Priority = DMA_Priority_High;
     DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
     DMA_Init(DMA1_Channel2, &DMA_InitStructure);
     DMA_Cmd(DMA1_Channel2, ENABLE);
 
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)&USART3->DATAR;
+    DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
     DMA_InitStructure.DMA_MemoryBaseAddr = (u32)RXBuffer;
+    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+    DMA_InitStructure.DMA_BufferSize = RXDMA_SZ;
+    DMA_InitStructure.DMA_Priority = DMA_Priority_High;
+    DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
+    DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
     DMA_Init(DMA1_Channel3, &DMA_InitStructure);
     DMA_Cmd(DMA1_Channel3, ENABLE);
 
@@ -110,72 +116,40 @@ void VCOM_LineCoding(VCOM_LINE_CODING * LineCfgx)
     __disable_irq();
     
     USART_Init(USART3, &USART_InitStructure);
-    
-    RX_Timeout = (1000.0 / USART_InitStructure.USART_BaudRate) * (512 * 10) * 1.5;
 
     __enable_irq();
 }
 
 
 extern volatile uint32_t SysTick_ms;
+
 void VCOM_TransferData(void)
 {
-    uint8_t *rxdata = RXBuffer;
+    static uint32_t last_ms = 0;
+    static uint32_t last_pos = 0;
 
     if(Vcom.in_ready)		// 可以向主机发送数据
     {
-        if((DMA1->INTFR & (DMA1_FLAG_HT3 | DMA1_FLAG_TC3)) || (SysTick_ms > RX_Timeout))
+        uint32_t pos = RXDMA_SZ - DMA_GetCurrDataCounter(DMA1_Channel3);
+        if((pos - last_pos >= CDC_BULK_IN_SZ_HS) || ((pos != last_pos) && (SysTick_ms != last_ms)))
         {
-            if(DMA1->INTFR & DMA1_FLAG_HT3)
-            {
-                rxdata = &RXBuffer[0];
+            if(pos < last_pos)
+                pos = RXDMA_SZ;
 
-                Vcom.in_bytes = BUF_SZ/2;
+            if(pos - last_pos > CDC_BULK_IN_SZ_HS)
+                pos = last_pos + CDC_BULK_IN_SZ_HS;
 
-                DMA1->INTFCR = DMA1_FLAG_HT3;
-            }
-            else if(DMA1->INTFR & DMA1_FLAG_TC3)
-            {
-                rxdata = &RXBuffer[BUF_SZ/2];
-
-                Vcom.in_bytes = BUF_SZ/2;
-
-                DMA1->INTFCR = DMA1_FLAG_TC3;
-
-                SysTick_ms = 0;
-            }
-            else
-            {
-                SysTick_ms = 0;
-
-                uint32_t n_xfer = BUF_SZ - DMA_GetCurrDataCounter(DMA1_Channel3);
-                if(n_xfer == 0)
-                {
-                    goto xfer_out;
-                }
-                if(n_xfer < BUF_SZ/2)
-                {
-                    rxdata = &RXBuffer[0];
-
-                    Vcom.in_bytes = n_xfer;
-                }
-                else
-                {
-                    rxdata = &RXBuffer[BUF_SZ/2];
-
-                    Vcom.in_bytes = n_xfer - BUF_SZ/2;
-                }
-
-                DMA_Cmd(DMA1_Channel3, DISABLE);
-                DMA_SetCurrDataCounter(DMA1_Channel3, BUF_SZ);
-                DMA_Cmd(DMA1_Channel3, ENABLE);
-            }
+            Vcom.in_bytes = pos - last_pos;
 
             Vcom.in_ready = 0;
 
-            USBHSD->UEP3_TX_DMA = (uint32_t)rxdata;
+            USBHSD->UEP3_TX_DMA = (uint32_t)&RXBuffer[last_pos];
             USBHSD->UEP3_TX_LEN = Vcom.in_bytes;
             USBHSD->UEP3_TX_CTRL = (USBHSD->UEP3_TX_CTRL & ~USBHS_UEP_T_RES_MASK) | USBHS_UEP_T_RES_ACK;
+
+            last_pos = pos % RXDMA_SZ;
+
+            last_ms = SysTick_ms;
         }
         else
         {
