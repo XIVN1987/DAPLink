@@ -1,3 +1,4 @@
+#include <string.h>
 #include "ch32v20x.h"
 #include "usb_lib.h"
 #include "usb_regs.h"
@@ -10,35 +11,71 @@ volatile VCOM Vcom = {.in_ready = 1};
 VCOM_LINE_CODING LineCfg = {115200, 0, 0, 8};   // Baud rate, stop bits, parity bits, data bits
 
 
+#define RXDMA_SZ  (CDC_BULK_IN_SZ * 2)
+uint8_t RXBuffer[RXDMA_SZ] __attribute__((aligned(4)));
+uint8_t TXBuffer[CDC_BULK_OUT_SZ] __attribute__((aligned(4)));
+
+
 void VCOM_Init(void)
 {
     GPIO_InitTypeDef  GPIO_InitStructure;
     USART_InitTypeDef USART_InitStructure;
+    DMA_InitTypeDef   DMA_InitStructure;
 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
+    RCC_AHBPeriphClockCmd (RCC_AHBPeriph_DMA1, ENABLE);
 
     GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_2;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF_PP;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOA, &GPIO_InitStructure);              // PA2 => USART2_TX
 
     GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_3;
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_IPU;
     GPIO_Init(GPIOA, &GPIO_InitStructure);              // PA3 => USART2_RX
 
+
+    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)&USART2->DATAR;
+    DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+    DMA_InitStructure.DMA_MemoryBaseAddr = (u32)TXBuffer;
+    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+    DMA_InitStructure.DMA_BufferSize = 0;
+    DMA_InitStructure.DMA_Priority = DMA_Priority_High;
+    DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+    DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
+    DMA_Init(DMA1_Channel7, &DMA_InitStructure);
+    DMA_Cmd(DMA1_Channel7, ENABLE);
+
+    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)&USART2->DATAR;
+    DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+    DMA_InitStructure.DMA_MemoryBaseAddr = (u32)RXBuffer;
+    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+    DMA_InitStructure.DMA_BufferSize = RXDMA_SZ;
+    DMA_InitStructure.DMA_Priority = DMA_Priority_High;
+    DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
+    DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
+    DMA_Init(DMA1_Channel6, &DMA_InitStructure);
+    DMA_Cmd(DMA1_Channel6, ENABLE);
+
+
     USART_InitStructure.USART_BaudRate = 115200;
     USART_InitStructure.USART_WordLength = USART_WordLength_8b;
     USART_InitStructure.USART_StopBits = USART_StopBits_1;
     USART_InitStructure.USART_Parity = USART_Parity_No;
-    USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+    USART_InitStructure.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
     USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
     USART_Init(USART2, &USART_InitStructure);
 
-    USART_Cmd(USART2, ENABLE);
+    USART_DMACmd(USART2, USART_DMAReq_Tx | USART_DMAReq_Rx, ENABLE);
 
-    USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
-	NVIC_EnableIRQ(USART2_IRQn);
+    USART_Cmd(USART2, ENABLE);
 }
 
 
@@ -71,20 +108,11 @@ void VCOM_LineCoding(VCOM_LINE_CODING * LineCfgx)
     }
 
     USART_InitStructure.USART_BaudRate = LineCfgx->u32DTERate;
-    USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+    USART_InitStructure.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
     USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
 
 
     __disable_irq();
-    
-    // Reset software FIFO
-    Vcom.rx_bytes = 0;
-	Vcom.rx_wrptr = 0;
-    Vcom.rx_rdptr = 0;
-
-    Vcom.tx_bytes = 0;
-	Vcom.tx_wrptr = 0;
-    Vcom.tx_rdptr = 0;
     
     USART_Init(USART2, &USART_InitStructure);
     
@@ -92,67 +120,34 @@ void VCOM_LineCoding(VCOM_LINE_CODING * LineCfgx)
 }
 
 
-void USART2_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
-
-void USART2_IRQHandler(void)
-{
-	if(USART_GetITStatus(USART2, USART_IT_RXNE) != RESET)
-	{
-		uint16_t chr = USART_ReceiveData(USART2);
-		
-		if(Vcom.rx_bytes < RX_BUFF_SIZE)
-		{
-			Vcom.rx_buff[Vcom.rx_wrptr++] = chr;
-			if(Vcom.rx_wrptr == RX_BUFF_SIZE)
-				Vcom.rx_wrptr = 0;
-			
-			Vcom.rx_bytes++;
-		}
-	}
-	
-	if(USART_GetITStatus(USART2, USART_IT_TXE) != RESET)
-	{
-		if(Vcom.tx_bytes)
-        {
-		    USART_SendData(USART2, Vcom.tx_buff[Vcom.tx_rdptr++]);
-			if(Vcom.tx_rdptr == TX_BUFF_SIZE)
-				Vcom.tx_rdptr = 0;
-			
-			Vcom.tx_bytes--;
-        }
-        else
-        {
-            /* No more data, just stop Tx (Stop work) */
-            USART_ITConfig(USART2, USART_IT_TXE, DISABLE);
-        }
-	}
-}
-
+extern volatile uint32_t SysTick_ms;
 
 void VCOM_TransferData(void)
 {
+    static uint32_t last_ms = 0;
+    static uint32_t last_pos = 0;
+
     if(Vcom.in_ready)		// 可以向主机发送数据
     {
-        if(Vcom.rx_bytes)	// 有新的数据可以发送
+        uint32_t pos = RXDMA_SZ - DMA_GetCurrDataCounter(DMA1_Channel6);
+        if((pos - last_pos >= CDC_BULK_IN_SZ) || ((pos != last_pos) && (SysTick_ms != last_ms)))
         {
-            Vcom.in_bytes = Vcom.rx_bytes;
-            if(Vcom.in_bytes > CDC_BULK_IN_SZ)
-                Vcom.in_bytes = CDC_BULK_IN_SZ;
+            if(pos < last_pos)
+                pos = RXDMA_SZ;
 
-            for(int i = 0; i < Vcom.in_bytes; i++)
-            {
-                Vcom.in_buff[i] = Vcom.rx_buff[Vcom.rx_rdptr++];
-                if(Vcom.rx_rdptr >= RX_BUFF_SIZE)
-                    Vcom.rx_rdptr = 0;
-            }
+            if(pos - last_pos > CDC_BULK_IN_SZ)
+                pos = last_pos + CDC_BULK_IN_SZ;
 
-            __disable_irq();
-            Vcom.rx_bytes -= Vcom.in_bytes;
-            __enable_irq();
+            Vcom.in_bytes = pos - last_pos;
 
             Vcom.in_ready = 0;
-            USB_SIL_Write(EP3_IN, (uint8_t *)Vcom.in_buff, Vcom.in_bytes);
+
+            USB_SIL_Write(EP3_IN, &RXBuffer[last_pos], Vcom.in_bytes);
             SetEPTxValid(ENDP3);
+
+            last_pos = pos % RXDMA_SZ;
+
+            last_ms = SysTick_ms;
         }
         else
         {
@@ -161,35 +156,25 @@ void VCOM_TransferData(void)
             if(Vcom.in_bytes == CDC_BULK_IN_SZ)
 			{
 				Vcom.in_bytes = 0;
-				
-				USB_SIL_Write(EP3_IN, (uint8_t *)Vcom.in_buff, 0);
+
+				USB_SIL_Write(EP3_IN, (uint8_t *)0, 0);
 				SetEPTxValid(ENDP3);
 			}
         }
     }
 
-	/* 从主机接收到数据，且 tx_buff 能够装下它们 */
-    if(Vcom.out_ready && (Vcom.out_bytes <= TX_BUFF_SIZE - Vcom.tx_bytes))
+	/* 从主机接收到数据，且前面的数据 DMA 已发送完 */
+    if(Vcom.out_ready && (DMA_GetCurrDataCounter(DMA1_Channel7) == 0))
     {
-        for(int i = 0; i < Vcom.out_bytes; i++)
-        {
-            Vcom.tx_buff[Vcom.tx_wrptr++] = Vcom.out_buff[i];
-            if(Vcom.tx_wrptr >= TX_BUFF_SIZE)
-                Vcom.tx_wrptr = 0;
-        }
-
-        __disable_irq();
-        Vcom.tx_bytes += Vcom.out_bytes;
-        __enable_irq();
-
         Vcom.out_ready = 0;
+
+        memcpy(TXBuffer, (uint8_t *)Vcom.out_buff, Vcom.out_bytes);
+
+        DMA_Cmd(DMA1_Channel7, DISABLE);
+        DMA_SetCurrDataCounter(DMA1_Channel7, Vcom.out_bytes);
+        DMA_Cmd(DMA1_Channel7, ENABLE);
 
         /* Ready for next BULK OUT */
 		SetEPRxValid(ENDP3);
-    }
-
-    if(Vcom.tx_bytes && ((USART2->CTLR1 & USART_CTLR1_TXEIE) == 0))
-    {
-        USART_ITConfig(USART2, USART_IT_TXE, ENABLE);
     }
 }

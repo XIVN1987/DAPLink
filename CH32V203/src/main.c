@@ -7,6 +7,9 @@
 
 extern uint8_t usbd_hid_process(void);
 
+volatile uint32_t SysTick_ms = 0;
+
+void SysTick_Config(uint32_t ticks);
 void USB_Config(void);
 
 int main(void)
@@ -16,6 +19,8 @@ int main(void)
     VCOM_Init();
 
     USB_Config();
+
+    SysTick_Config(SystemCoreClock / 1000);
  	
 	while(1)
 	{
@@ -23,6 +28,27 @@ int main(void)
 
 	    VCOM_TransferData();
 	}
+}
+
+
+void SysTick_Config(uint32_t ticks)
+{
+    SysTick->CTLR= 0;
+    SysTick->SR  = 0;
+    SysTick->CNT = 0;
+    SysTick->CMP = ticks;
+    SysTick->CTLR= 0x0F;
+
+    NVIC_EnableIRQ(SysTicK_IRQn);
+}
+
+
+void SysTick_Handler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+void SysTick_Handler(void)
+{
+    SysTick->SR = 0;
+
+    SysTick_ms++;
 }
 
 
