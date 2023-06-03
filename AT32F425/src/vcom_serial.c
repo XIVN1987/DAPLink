@@ -1,3 +1,4 @@
+#include <string.h>
 #include "at32f425.h"
 #include "usbd_sdr.h"
 #include "usbd_core.h"
@@ -5,17 +6,25 @@
 #include "hid_transfer.h"
 
 
-volatile VCOM Vcom = {.in_ready = 1};
+volatile VCOM Vcom;
 
 VCOM_LINE_CODING LineCfg = {115200, 0, 0, 8};   // Baud rate, stop bits, parity bits, data bits
 
 
+#define RXDMA_SZ  (CDC_BULK_IN_SZ * 2)
+uint8_t RXBuffer[RXDMA_SZ] __attribute__((aligned(4)));
+uint8_t TXBuffer[CDC_BULK_OUT_SZ] __attribute__((aligned(4)));
+
+
 void VCOM_Init(void)
 {
+	gpio_init_type gpio_init_struct;
+	dma_init_type  dma_init_struct;
+	
 	crm_periph_clock_enable(CRM_GPIOA_PERIPH_CLOCK, TRUE);
 	crm_periph_clock_enable(CRM_USART2_PERIPH_CLOCK, TRUE);
+	crm_periph_clock_enable(CRM_DMA1_PERIPH_CLOCK, TRUE);
 	
-	gpio_init_type gpio_init_struct;
 	gpio_default_para_init(&gpio_init_struct);
 	gpio_init_struct.gpio_mode = GPIO_MODE_MUX;
 	gpio_init_struct.gpio_pins = GPIO_PINS_2 | GPIO_PINS_3;
@@ -24,13 +33,42 @@ void VCOM_Init(void)
 	gpio_pin_mux_config(GPIOA, GPIO_PINS_SOURCE2, GPIO_MUX_1);		// PA2 => USART2_TX
 	gpio_pin_mux_config(GPIOA, GPIO_PINS_SOURCE3, GPIO_MUX_1);		// PA3 => USART2_RX
 	
+	
+	dma_flexible_config(DMA1, FLEX_CHANNEL1, DMA_FLEXIBLE_UART2_TX);
+	dma_init_struct.direction = DMA_DIR_MEMORY_TO_PERIPHERAL;
+	dma_init_struct.memory_base_addr = (uint32_t)TXBuffer;
+	dma_init_struct.memory_data_width = DMA_MEMORY_DATA_WIDTH_BYTE;
+	dma_init_struct.memory_inc_enable = TRUE;
+	dma_init_struct.peripheral_base_addr = (uint32_t)&USART2->dt;
+	dma_init_struct.peripheral_data_width = DMA_PERIPHERAL_DATA_WIDTH_BYTE;
+	dma_init_struct.peripheral_inc_enable = FALSE;
+	dma_init_struct.buffer_size = 0;
+	dma_init_struct.priority = DMA_PRIORITY_HIGH;
+	dma_init_struct.loop_mode_enable = FALSE;
+	dma_init(DMA1_CHANNEL1, &dma_init_struct);
+	dma_channel_enable(DMA1_CHANNEL1, TRUE);
+
+	dma_flexible_config(DMA1, FLEX_CHANNEL2, DMA_FLEXIBLE_UART2_RX);
+	dma_init_struct.direction = DMA_DIR_PERIPHERAL_TO_MEMORY;
+	dma_init_struct.memory_base_addr = (uint32_t)RXBuffer;
+	dma_init_struct.memory_data_width = DMA_MEMORY_DATA_WIDTH_BYTE;
+	dma_init_struct.memory_inc_enable = TRUE;
+	dma_init_struct.peripheral_base_addr = (uint32_t)&USART2->dt;
+	dma_init_struct.peripheral_data_width = DMA_PERIPHERAL_DATA_WIDTH_BYTE;
+	dma_init_struct.peripheral_inc_enable = FALSE;
+	dma_init_struct.buffer_size = RXDMA_SZ;
+	dma_init_struct.priority = DMA_PRIORITY_HIGH;
+	dma_init_struct.loop_mode_enable = TRUE;
+	dma_init(DMA1_CHANNEL2, &dma_init_struct);
+	dma_channel_enable(DMA1_CHANNEL2, TRUE);
+	
+	
 	usart_init(USART2, 115200, USART_DATA_8BITS, USART_STOP_1_BIT);
-	usart_interrupt_enable(USART2, USART_RDBF_INT, TRUE);
+	usart_dma_transmitter_enable(USART2, TRUE);
+	usart_dma_receiver_enable(USART2, TRUE);
 	usart_transmitter_enable(USART2, TRUE);
 	usart_receiver_enable(USART2, TRUE);
 	usart_enable(USART2, TRUE);
-	
-	NVIC_EnableIRQ(USART2_IRQn);
 }
 
 
@@ -65,15 +103,6 @@ void VCOM_LineCoding(VCOM_LINE_CODING * LineCfgx)
     
     __disable_irq();
     
-    // Reset software FIFO
-    Vcom.rx_bytes = 0;
-	Vcom.rx_wrptr = 0;
-    Vcom.rx_rdptr = 0;
-
-    Vcom.tx_bytes = 0;
-	Vcom.tx_wrptr = 0;
-    Vcom.tx_rdptr = 0;
-    
     usart_init(USART2, LineCfgx->u32DTERate, data_len, stop_len);
     usart_parity_selection_config(USART2, parity);
     
@@ -81,66 +110,35 @@ void VCOM_LineCoding(VCOM_LINE_CODING * LineCfgx)
 }
 
 
-void USART2_IRQHandler(void)
-{
-	if(usart_flag_get(USART2, USART_RDBF_FLAG) != RESET)
-	{
-		uint16_t chr = usart_data_receive(USART2);
-		
-		if(Vcom.rx_bytes < RX_BUFF_SIZE)
-		{
-			Vcom.rx_buff[Vcom.rx_wrptr++] = chr;
-			if(Vcom.rx_wrptr == RX_BUFF_SIZE)
-				Vcom.rx_wrptr = 0;
-			
-			Vcom.rx_bytes++;
-		}
-	}
-	
-	if(usart_flag_get(USART2, USART_TDBE_FLAG) != RESET)
-	{
-		if(Vcom.tx_bytes)
-        {
-			usart_data_transmit(USART2, Vcom.tx_buff[Vcom.tx_rdptr++]);
-			if(Vcom.tx_rdptr == TX_BUFF_SIZE)
-				Vcom.tx_rdptr = 0;
-			
-			Vcom.tx_bytes--;
-        }
-        else
-        {
-            /* No more data, just stop Tx (Stop work) */
-            usart_interrupt_enable(USART2, USART_TDBE_INT, FALSE);
-        }
-	}
-}
-
-
 extern otg_core_type Otg;
+extern volatile uint32_t SysTick_ms;
 
 void VCOM_TransferData(void)
 {
+	static uint32_t last_ms = 0;
+    static uint32_t last_pos = 0;
+	
     if(Vcom.in_ready)		// 可以向主机发送数据
     {
-        if(Vcom.rx_bytes)	// 有新的数据可以发送
+        uint32_t pos = RXDMA_SZ - dma_data_number_get(DMA1_CHANNEL2);
+        if((pos - last_pos >= CDC_BULK_IN_SZ) || ((pos != last_pos) && (SysTick_ms != last_ms)))
         {
-            Vcom.in_bytes = Vcom.rx_bytes;
-            if(Vcom.in_bytes > CDC_BULK_IN_SZ)
-                Vcom.in_bytes = CDC_BULK_IN_SZ;
+            if(pos < last_pos)
+                pos = RXDMA_SZ;
 
-            for(int i = 0; i < Vcom.in_bytes; i++)
-            {
-                Vcom.in_buff[i] = Vcom.rx_buff[Vcom.rx_rdptr++];
-                if(Vcom.rx_rdptr >= RX_BUFF_SIZE)
-                    Vcom.rx_rdptr = 0;
-            }
+            if(pos - last_pos > CDC_BULK_IN_SZ)
+                pos = last_pos + CDC_BULK_IN_SZ;
 
-            __disable_irq();
-            Vcom.rx_bytes -= Vcom.in_bytes;
-            __enable_irq();
+            Vcom.in_bytes = pos - last_pos;
 
             Vcom.in_ready = 0;
+			
+			memcpy((uint8_t *)Vcom.in_buff, &RXBuffer[last_pos], Vcom.in_bytes);
 			usbd_ept_send(&Otg.dev, CDC_BULK_IN_EP, (uint8_t *)Vcom.in_buff, Vcom.in_bytes);
+			
+			last_pos = pos % RXDMA_SZ;
+
+            last_ms = SysTick_ms;
         }
         else
         {
@@ -150,33 +148,23 @@ void VCOM_TransferData(void)
 			{
 				Vcom.in_bytes = 0;
 				
-                usbd_ept_send(&Otg.dev, CDC_BULK_IN_EP, 0, 0);
+                usbd_ept_send(&Otg.dev, CDC_BULK_IN_EP, (uint8_t *)0, 0);
 			}
         }
     }
 
-	/* 从主机接收到数据，且 tx_buff 能够装下它们 */
-    if(Vcom.out_ready && (Vcom.out_bytes <= TX_BUFF_SIZE - Vcom.tx_bytes))
+	/* 从主机接收到数据，且前面的数据 DMA 已发送完 */
+    if(Vcom.out_ready && (dma_data_number_get(DMA1_CHANNEL1) == 0))
     {
-        for(int i = 0; i < Vcom.out_bytes; i++)
-        {
-            Vcom.tx_buff[Vcom.tx_wrptr++] = Vcom.out_buff[i];
-            if(Vcom.tx_wrptr >= TX_BUFF_SIZE)
-                Vcom.tx_wrptr = 0;
-        }
-
-        __disable_irq();
-        Vcom.tx_bytes += Vcom.out_bytes;
-        __enable_irq();
-
         Vcom.out_ready = 0;
+		
+		memcpy(TXBuffer, (uint8_t *)Vcom.out_buff, Vcom.out_bytes);
+		
+		dma_channel_enable(DMA1_CHANNEL1, FALSE);
+        dma_data_number_set(DMA1_CHANNEL1, Vcom.out_bytes);
+        dma_channel_enable(DMA1_CHANNEL1, TRUE);
 
         /* Ready for next BULK OUT */
         usbd_ept_recv(&Otg.dev, CDC_BULK_OUT_EP, (uint8_t *)Vcom.out_buff, CDC_BULK_OUT_SZ);
-    }
-
-    if((Vcom.tx_bytes) && (USART2->ctrl1_bit.tdbeien == 0))
-    {
-        usart_interrupt_enable(USART2, USART_TDBE_INT, TRUE);
     }
 }

@@ -492,6 +492,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\CSL\AT32F425_StdPeriph_Driver\at32f425_usb.c</FilePath>
             </File>
+            <File>
+              <FileName>at32f425_dma.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\CSL\AT32F425_StdPeriph_Driver\at32f425_dma.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

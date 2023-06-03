@@ -20,8 +20,6 @@ static usb_sts_type class_init_handler(void *udev)
 {
 	usbd_core_type *usbd = (usbd_core_type *)udev;
 	
-	VCOM_Init();
-	
 #ifdef DAP_FW_V1
 	usbd_ept_open(usbd, HID_INT_IN_EP,  EPT_INT_TYPE, HID_INT_IN_SZ);
 	usbd_ept_open(usbd, HID_INT_OUT_EP, EPT_INT_TYPE, HID_INT_OUT_SZ);
@@ -242,6 +240,7 @@ static usb_sts_type class_event_handler(void *udev, usbd_event_type event)
 	switch(event)
 	{
 	case USBD_RESET_EVENT:
+		Vcom.in_ready = 1;
 		break;
 	
 	case USBD_SUSPEND_EVENT:

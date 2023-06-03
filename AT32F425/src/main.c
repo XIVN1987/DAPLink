@@ -18,6 +18,8 @@ int main(void)
 	systemInit();
 	
 	DAP_Setup();
+	
+	VCOM_Init();
 
 	USB_Config();
 
