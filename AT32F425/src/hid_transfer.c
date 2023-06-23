@@ -35,6 +35,8 @@ static usb_sts_type class_init_handler(void *udev)
 	usbd_ept_open(usbd, CDC_BULK_OUT_EP, EPT_BULK_TYPE, CDC_BULK_OUT_SZ);
 
 	usbd_ept_recv(usbd, CDC_BULK_OUT_EP, (uint8_t *)Vcom.out_buff, CDC_BULK_OUT_SZ);
+	
+	Vcom.in_ready = 1;
 
 	return USB_OK;
 }
@@ -240,7 +242,6 @@ static usb_sts_type class_event_handler(void *udev, usbd_event_type event)
 	switch(event)
 	{
 	case USBD_RESET_EVENT:
-		Vcom.in_ready = 1;
 		break;
 	
 	case USBD_SUSPEND_EVENT:
