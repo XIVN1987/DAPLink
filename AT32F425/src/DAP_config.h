@@ -104,7 +104,6 @@ static void PORT_JTAG_SETUP(void)
 	gpio_bits_set(JTAG_TCK_PORT, JTAG_TCK_PIN);
 	gpio_bits_set(JTAG_TMS_PORT, JTAG_TMS_PIN);
 	gpio_bits_set(JTAG_TDI_PORT, JTAG_TDI_PIN);
-	gpio_bits_set(nRESET_PORT,   nRESET_PIN);
 
 	gpio_init_type gpio_init_struct;
 	gpio_default_para_init(&gpio_init_struct);
@@ -122,10 +121,6 @@ static void PORT_JTAG_SETUP(void)
 	gpio_init_struct.gpio_pins = JTAG_TDO_PIN;
 	gpio_init_struct.gpio_mode = GPIO_MODE_INPUT;
 	gpio_init(JTAG_TDO_PORT, &gpio_init_struct);
-	
-	gpio_init_struct.gpio_pins = nRESET_PIN;
-	gpio_init_struct.gpio_mode = GPIO_MODE_OUTPUT;
-	gpio_init(nRESET_PORT, &gpio_init_struct);
 }
 
 /** Setup SWD I/O pins: SWCLK, SWDIO, and nRESET.
@@ -135,7 +130,6 @@ static void PORT_SWD_SETUP(void)
 {
 	gpio_bits_set(SWCLK_PORT, SWCLK_PIN);
 	gpio_bits_set(SWDIO_PORT, SWDIO_PIN);
-	gpio_bits_set(nRESET_PORT, nRESET_PIN);
 
 	gpio_init_type gpio_init_struct;
 	gpio_default_para_init(&gpio_init_struct);
@@ -146,9 +140,6 @@ static void PORT_SWD_SETUP(void)
 	
 	gpio_init_struct.gpio_pins = SWDIO_PIN;
 	gpio_init(SWDIO_PORT, &gpio_init_struct);
-	
-	gpio_init_struct.gpio_pins = nRESET_PIN;
-	gpio_init(nRESET_PORT, &gpio_init_struct);
 }
 
 /** Disable JTAG/SWD I/O Pins.
@@ -185,9 +176,6 @@ static void PORT_OFF(void)
 
 	gpio_init_struct.gpio_pins = JTAG_TDO_PIN;
 	gpio_init(JTAG_TDO_PORT, &gpio_init_struct);
-	
-	gpio_init_struct.gpio_pins = nRESET_PIN;
-	gpio_init(nRESET_PORT, &gpio_init_struct);
 }
 
 
@@ -334,10 +322,16 @@ static void DAP_SETUP(void)
 
 	gpio_init_type gpio_init_struct;
 	gpio_default_para_init(&gpio_init_struct);
-
+	
 	gpio_init_struct.gpio_pins = LED_CONNECTED_PIN | LED_RUNNING_PIN;
 	gpio_init_struct.gpio_mode = GPIO_MODE_OUTPUT;
 	gpio_init(LED_CONNECTED_PORT, &gpio_init_struct);
+	
+	gpio_bits_set(nRESET_PORT, nRESET_PIN);
+	
+	gpio_init_struct.gpio_pins = nRESET_PIN;
+	gpio_init_struct.gpio_out_type = GPIO_OUTPUT_OPEN_DRAIN;
+	gpio_init(nRESET_PORT, &gpio_init_struct);
 }
 
 
