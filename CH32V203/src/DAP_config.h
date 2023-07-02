@@ -13,7 +13,7 @@
 
 #define DAP_SWD                 1               ///< SWD Mode:  1 = available, 0 = not available
 
-#define DAP_JTAG                0               ///< JTAG Mode: 0 = not available
+#define DAP_JTAG                1               ///< JTAG Mode: 0 = not available
 
 #define DAP_JTAG_DEV_CNT        8               ///< Maximum number of JTAG devices on scan chain
 
@@ -77,8 +77,17 @@ DAP Hardware I/O Pin Access Functions
 #define SWDIO_PIN			GPIO_Pin_0
 #define SWDIO_PIN_INDEX		0
 
-#define SWD_RST_PORT		GPIOA
-#define SWD_RST_PIN			GPIO_Pin_4
+#define JTAG_TCK_PORT       SWCLK_PORT
+#define JTAG_TCK_PIN        SWCLK_PIN
+#define JTAG_TMS_PORT       SWDIO_PORT
+#define JTAG_TMS_PIN        SWDIO_PIN
+#define JTAG_TDI_PORT       GPIOA
+#define JTAG_TDI_PIN        GPIO_Pin_7
+#define JTAG_TDO_PORT       GPIOA
+#define JTAG_TDO_PIN        GPIO_Pin_6
+
+#define nRESET_PORT         GPIOA
+#define nRESET_PIN			GPIO_Pin_4
 
 #define LED_CONNECTED_PORT	GPIOA
 #define LED_CONNECTED_PIN	GPIO_Pin_5
@@ -92,8 +101,26 @@ DAP Hardware I/O Pin Access Functions
 */
 static void PORT_JTAG_SETUP(void)
 {
-#if (DAP_JTAG != 0)
-#endif
+    GPIO_InitTypeDef GPIO_InitStruct;
+
+    GPIO_SetBits(JTAG_TCK_PORT, JTAG_TCK_PIN);
+    GPIO_SetBits(JTAG_TMS_PORT, JTAG_TMS_PIN);
+    GPIO_SetBits(JTAG_TDI_PORT, JTAG_TDI_PIN);
+
+    GPIO_InitStruct.GPIO_Pin = JTAG_TCK_PIN;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(JTAG_TCK_PORT, &GPIO_InitStruct);
+
+    GPIO_InitStruct.GPIO_Pin = JTAG_TMS_PIN;
+    GPIO_Init(JTAG_TMS_PORT, &GPIO_InitStruct);
+
+    GPIO_InitStruct.GPIO_Pin = JTAG_TDI_PIN;
+    GPIO_Init(JTAG_TDI_PORT, &GPIO_InitStruct);
+
+    GPIO_InitStruct.GPIO_Pin = JTAG_TDO_PIN;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_Init(JTAG_TDO_PORT, &GPIO_InitStruct);
 }
 
 /** Setup SWD I/O pins: SWCLK, SWDIO, and nRESET.
@@ -103,6 +130,9 @@ static void PORT_SWD_SETUP(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct;
 
+    GPIO_SetBits(SWCLK_PORT, SWCLK_PIN);
+    GPIO_SetBits(SWDIO_PORT, SWDIO_PIN);
+
     GPIO_InitStruct.GPIO_Pin = SWCLK_PIN;
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
@@ -110,19 +140,6 @@ static void PORT_SWD_SETUP(void)
 
     GPIO_InitStruct.GPIO_Pin = SWDIO_PIN;
     GPIO_Init(SWDIO_PORT, &GPIO_InitStruct);
-
-    GPIO_InitStruct.GPIO_Pin = SWD_RST_PIN;
-    GPIO_Init(SWD_RST_PORT, &GPIO_InitStruct);
-
-    GPIO_InitStruct.GPIO_Pin = LED_RUNNING_PIN;
-    GPIO_Init(LED_RUNNING_PORT, &GPIO_InitStruct);
-
-    GPIO_InitStruct.GPIO_Pin = LED_CONNECTED_PIN;
-    GPIO_Init(LED_CONNECTED_PORT, &GPIO_InitStruct);
-
-    GPIO_SetBits(SWCLK_PORT, SWCLK_PIN);
-    GPIO_SetBits(SWDIO_PORT, SWDIO_PIN);
-    GPIO_SetBits(SWD_RST_PORT, SWD_RST_PIN);
 }
 
 /** Disable JTAG/SWD I/O Pins.
@@ -136,16 +153,24 @@ static void PORT_OFF(void)
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
 
     GPIO_InitStruct.GPIO_Pin = SWCLK_PIN;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IPD;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(SWCLK_PORT, &GPIO_InitStruct);
 	
     GPIO_InitStruct.GPIO_Pin = SWDIO_PIN;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(SWDIO_PORT, &GPIO_InitStruct);
 
-    GPIO_InitStruct.GPIO_Pin = SWD_RST_PIN;
-    GPIO_Init(SWD_RST_PORT, &GPIO_InitStruct);
+    GPIO_InitStruct.GPIO_Pin = JTAG_TCK_PIN;
+    GPIO_Init(JTAG_TCK_PORT, &GPIO_InitStruct);
+
+    GPIO_InitStruct.GPIO_Pin = JTAG_TMS_PIN;
+    GPIO_Init(JTAG_TMS_PORT, &GPIO_InitStruct);
+
+    GPIO_InitStruct.GPIO_Pin = JTAG_TDI_PIN;
+    GPIO_Init(JTAG_TDI_PORT, &GPIO_InitStruct);
+
+    GPIO_InitStruct.GPIO_Pin = JTAG_TDO_PIN;
+    GPIO_Init(JTAG_TDO_PORT, &GPIO_InitStruct);
 }
 
 
@@ -202,28 +227,28 @@ static __inline void PIN_SWDIO_OUT(uint32_t bit)
 
 static __inline void PIN_SWDIO_OUT_ENABLE(void)
 {
-#if(SWDIO_PIN_INDEX < 8)
-    SWDIO_PORT->CFGLR &= ~(0xF <<  SWDIO_PIN_INDEX * 4);
-    SWDIO_PORT->CFGLR |=  (0x3 <<  SWDIO_PIN_INDEX * 4);
-#else
-    SWDIO_PORT->CFGHR &= ~(0xF << (SWDIO_PIN_INDEX - 8) * 4);
-    SWDIO_PORT->CFGHR |=  (0x3 << (SWDIO_PIN_INDEX - 8) * 4);
-#endif
-
     SWDIO_PORT->BCR  = SWDIO_PIN;
+
+#if(SWDIO_PIN_INDEX < 8)
+    SWDIO_PORT->CFGLR = (SWDIO_PORT->CFGLR & ~(0xF <<  SWDIO_PIN_INDEX * 4))
+                                           |  (0x3 <<  SWDIO_PIN_INDEX * 4);
+#else
+    SWDIO_PORT->CFGHR = (SWDIO_PORT->CFGHR & ~(0xF << (SWDIO_PIN_INDEX - 8) * 4))
+                                           |  (0x3 << (SWDIO_PIN_INDEX - 8) * 4);
+#endif
 }
 
 static __inline void PIN_SWDIO_OUT_DISABLE(void)
 {
-#if(SWDIO_PIN_INDEX < 8)
-    SWDIO_PORT->CFGLR &= ~(0xF <<  SWDIO_PIN_INDEX * 4);
-    SWDIO_PORT->CFGLR |=  (0x8 <<  SWDIO_PIN_INDEX * 4);
-#else
-    SWDIO_PORT->CFGHR &= ~(0xF << (SWDIO_PIN_INDEX - 8) * 4);
-    SWDIO_PORT->CFGHR |=  (0x8 << (SWDIO_PIN_INDEX - 8) * 4);
-#endif
-
     SWDIO_PORT->BSHR = SWDIO_PIN;
+
+#if(SWDIO_PIN_INDEX < 8)
+    SWDIO_PORT->CFGLR = (SWDIO_PORT->CFGLR & ~(0xF <<  SWDIO_PIN_INDEX * 4))
+                                           |  (0x8 <<  SWDIO_PIN_INDEX * 4);
+#else
+    SWDIO_PORT->CFGHR = (SWDIO_PORT->CFGHR & ~(0xF << (SWDIO_PIN_INDEX - 8) * 4))
+                                           |  (0x8 << (SWDIO_PIN_INDEX - 8) * 4);
+#endif
 }
 
 
@@ -231,15 +256,13 @@ static __inline void PIN_SWDIO_OUT_DISABLE(void)
 
 static __inline uint32_t PIN_TDI_IN(void)
 {
-#if (DAP_JTAG != 0)
-#endif
-	return 0;
+    return (JTAG_TDI_PORT->INDR & JTAG_TDI_PIN) ? 1 : 0;
 }
 
 static __inline void PIN_TDI_OUT(uint32_t bit)
 {
-#if (DAP_JTAG != 0)
-#endif
+    if(bit & 1) JTAG_TDI_PORT->BSHR = JTAG_TDI_PIN;
+    else        JTAG_TDI_PORT->BCR  = JTAG_TDI_PIN;
 }
 
 
@@ -247,9 +270,7 @@ static __inline void PIN_TDI_OUT(uint32_t bit)
 
 static __inline uint32_t PIN_TDO_IN(void)
 {
-#if (DAP_JTAG != 0)
-#endif
-	return 0;
+    return (JTAG_TDO_PORT->INDR & JTAG_TDO_PIN) ? 1 : 0;
 }
 
 
@@ -267,15 +288,15 @@ static __inline void PIN_nTRST_OUT(uint32_t bit)
 // nRESET Pin I/O------------------------------------------
 static __inline uint32_t PIN_nRESET_IN(void)
 {
-    return (SWD_RST_PORT->INDR & SWD_RST_PIN) ? 1 : 0;
+    return (nRESET_PORT->INDR & nRESET_PIN) ? 1 : 0;
 }
 
 #include "cmsis_compiler.h"
 extern uint8_t swd_write_word(uint32_t addr, uint32_t val);
 static __inline void PIN_nRESET_OUT(uint32_t bit)
 {
-	if(bit & 1) SWD_RST_PORT->BSHR = SWD_RST_PIN;
-	else		SWD_RST_PORT->BCR  = SWD_RST_PIN;
+	if(bit & 1) nRESET_PORT->BSHR = nRESET_PIN;
+	else		nRESET_PORT->BCR  = nRESET_PIN;
 	
 	if((bit & 1) == 0)
 	{
@@ -310,6 +331,22 @@ static uint32_t TIMESTAMP_GET (void) {
 static void DAP_SETUP(void)
 {	
 	PORT_OFF();
+
+    GPIO_InitTypeDef GPIO_InitStruct;
+
+    GPIO_InitStruct.GPIO_Pin = LED_CONNECTED_PIN;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(LED_CONNECTED_PORT, &GPIO_InitStruct);
+
+    GPIO_InitStruct.GPIO_Pin = LED_RUNNING_PIN;
+    GPIO_Init(LED_RUNNING_PORT, &GPIO_InitStruct);
+
+    GPIO_SetBits(nRESET_PORT, nRESET_PIN);
+
+    GPIO_InitStruct.GPIO_Pin = nRESET_PIN;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_Out_OD;
+    GPIO_Init(nRESET_PORT, &GPIO_InitStruct);
 }
 
 
