@@ -258,6 +258,8 @@ void USBD_Reset(void)
     SetDeviceAddress(0);
 
     bDeviceState = ATTACHED;
+
+    Vcom.in_ready = 1;
 }
 
 /*********************************************************************

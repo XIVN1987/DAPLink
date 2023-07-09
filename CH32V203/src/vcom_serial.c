@@ -6,7 +6,7 @@
 #include "vcom_serial.h"
 
 
-volatile VCOM Vcom = {.in_ready = 1};
+volatile VCOM Vcom;
 
 VCOM_LINE_CODING LineCfg = {115200, 0, 0, 8};   // Baud rate, stop bits, parity bits, data bits
 
