@@ -5,6 +5,13 @@
 #include "DAP.h"
 #include "vcom_serial.h"
 
+
+/* 在 Properties for DAPLink -> C/C++ Build -> Settings -> C Compiler -> Preprocessor 中：
+   定义 DAP_FW_V1：   生成 CMSIS-DAP v1 固件，使用 HID 传输协议
+   不定义 DAP_FW_V1： 生成 CMSIS-DAP v2 固件，使用 WINUSB 传输协议
+*/
+
+
 extern uint8_t usbd_hid_process(void);
 
 volatile uint32_t SysTick_ms = 0;

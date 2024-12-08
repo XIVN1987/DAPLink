@@ -69,6 +69,13 @@
 
 
 
+#define DESC_BOS            0x0F
+#define DESC_CAPABILITY     0x10
+
+#define WINUSB_VENDOR_CODE  0x34
+
+
+
 #include "ch32v20x.h"
 
 void Delay_Ms(uint32_t n);

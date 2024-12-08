@@ -6,7 +6,7 @@ DAPLink (CMSIS-DAP) based on Artery AT32F425 (support crystal-less USB), support
 
 On C/C++ page of Keil Option Window:
 * Define `DAP_FW_V1`: generate CMSIS-DAP V1 firmware, using HID transport protocol.
-* Do not define `DAP_FW_V1`: Generate CMSIS-DAP V2 firmware, using WINUSB transfer protocol.
+* Do not define `DAP_FW_V1`: generate CMSIS-DAP V2 firmware, using WINUSB transfer protocol.
 
 ### Pin map
 |  FUNC    | Pin   |
@@ -23,6 +23,10 @@ Sch & PCB: [https://oshwhub.com/xivn1987/daplink](https://oshwhub.com/xivn1987/d
 
 ## DAPLink-CH32V203
 DAPLink (CMSIS-DAP) based on WCH CH32V203 (support crystal-less USB), supports SWD, JTAG and CDC.
+
+On Properties for DAPLink -> C/C++ Build -> Settings -> C Compiler -> Preprocessor page:
+* Define `DAP_FW_V1`: generate CMSIS-DAP V1 firmware, using HID transport protocol.
+* Do not define `DAP_FW_V1`: generate CMSIS-DAP V2 firmware, using WINUSB transfer protocol.
 
 ### Pin map
 |  FUNC    | Pin   |

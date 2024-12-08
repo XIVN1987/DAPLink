@@ -15,11 +15,11 @@
 #include "ch32v20x.h"
 
 
-#define USBD_VID    0x0416
+#define USBD_VID    0x1A86
 #ifdef DAP_FW_V1
-#define USBD_PID    0x5051
+#define USBD_PID    0x5021
 #else
-#define USBD_PID    0x7887
+#define USBD_PID    0x7021
 #endif
 
 
@@ -63,6 +63,7 @@ extern const uint8_t USBD_ConfigDescriptor[];
 extern const uint8_t USBD_StringLangID [];
 extern const uint8_t USBD_StringVendor [];
 extern const uint8_t USBD_StringProduct[];
+extern const uint8_t USBD_StringInterface[];
 extern const uint8_t USBD_HidRepDesc[];
 extern uint8_t USBD_StringSerial [];
 

@@ -653,6 +653,13 @@ void Data_Setup0(void)
       {
         CopyRoutine = pProperty->GetConfigDescriptor;
       }
+#ifndef DAP_FW_V1
+      else if (wValue1 == DESC_BOS)
+      {
+        uint8_t *USBD_GetBOSDescriptor(uint16_t Length);
+        CopyRoutine = USBD_GetBOSDescriptor;
+      }
+#endif
       else if (wValue1 == STRING_DESCRIPTOR)
       {
         CopyRoutine = pProperty->GetStringDescriptor;
@@ -717,6 +724,14 @@ void Data_Setup0(void)
     }
 
   }
+#ifndef DAP_FW_V1
+  else if((Type_Recipient & REQUEST_TYPE) == VENDOR_REQUEST)
+  {
+    uint8_t *USBD_MS_OS_20_DescriptorSet(uint16_t Length);
+    if((Request_No == WINUSB_VENDOR_CODE) && (pInformation->USBwIndex0 == 7))
+      CopyRoutine = USBD_MS_OS_20_DescriptorSet;
+  }
+#endif
   
   if (CopyRoutine)
   {
