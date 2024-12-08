@@ -75,7 +75,7 @@ ALIGNED_HEAD uint8_t g_config_descriptor[] ALIGNED_TAIL =
 #endif
 	0x00,               				// bInterfaceSubClass
 	0x00,               				// bInterfaceProtocol
-	0x05,               				// iInterface
+	0x05,               				// iInterface，必须是 5，因为 USB_INTERFACE_STRING == 5
 
 #ifdef DAP_FW_V1
 	// HID Descriptor

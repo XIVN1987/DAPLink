@@ -2,11 +2,11 @@
 #define __USB_DESC_H__
 
 
-#define USBD_VID    0x0416
+#define USBD_VID    0x1A86
 #ifdef DAP_FW_V1
-#define USBD_PID    0x5951
+#define USBD_PID    0x5321
 #else
-#define USBD_PID    0x7997
+#define USBD_PID    0x7321
 #endif
 
 
