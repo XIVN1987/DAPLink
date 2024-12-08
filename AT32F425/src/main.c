@@ -7,6 +7,12 @@
 #include "hid_transfer.h"
 
 
+/* 在 Option 弹窗的 C/C++ 页中：
+   定义 DAP_FW_V1：   生成 CMSIS-DAP v1 固件，使用 HID 传输协议
+   不定义 DAP_FW_V1： 生成 CMSIS-DAP v2 固件，使用 WINUSB 传输协议
+*/
+
+
 otg_core_type Otg;
 
 

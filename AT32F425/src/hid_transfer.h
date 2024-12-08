@@ -2,11 +2,11 @@
 #define __HID_TRANSFER_H__
 
 
-#define USBD_VID	0x0416
+#define USBD_VID	0x2E3C
 #ifdef DAP_FW_V1
 #define USBD_PID    0x5021
 #else
-#define USBD_PID    0x7687
+#define USBD_PID    0x7021
 #endif
 
 
@@ -25,8 +25,6 @@
 #define CDC_BULK_IN_SZ    	64
 #define CDC_BULK_OUT_SZ   	64
 
-
-#define WINUSB_VENDOR_CODE	0x34
 
 
 uint8_t usbd_hid_process(void);

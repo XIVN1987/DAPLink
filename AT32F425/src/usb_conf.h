@@ -24,6 +24,13 @@
 
 
 
+#define DESC_BOS            0x0F
+#define DESC_CAPABILITY     0x10
+
+#define WINUSB_VENDOR_CODE	0x34
+
+
+
 void usb_delay_ms(uint32_t ms);
 
 

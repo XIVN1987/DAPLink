@@ -80,6 +80,14 @@ static usb_sts_type usbd_get_descriptor(usbd_core_type *udev)
     case USB_DESCIPTOR_TYPE_CONFIGURATION:
       desc = udev->desc_handler->get_device_configuration();
       break;
+
+#ifndef DAP_FW_V1
+    usbd_desc_t *get_bos_descriptor(void);
+    case DESC_BOS:
+      desc = get_bos_descriptor();
+      break;
+#endif
+
     case USB_DESCIPTOR_TYPE_STRING:
     {
       uint8_t str_desc = (uint8_t)udev->setup.wValue;
@@ -351,7 +359,21 @@ usb_sts_type usbd_device_request(usbd_core_type *udev)
 {
   usb_sts_type ret = USB_OK;
   usb_setup_type *setup = &udev->setup;
-  if((setup->bmRequestType & USB_REQ_TYPE_RESERVED) != USB_REQ_TYPE_STANDARD)
+
+#ifndef DAP_FW_V1
+  extern uint8_t MS_OS_20_DescriptorSet[];
+  if((setup->bmRequestType & USB_REQ_TYPE_RESERVED) == USB_REQ_TYPE_VENDOR)
+  {
+    if((setup->bRequest == WINUSB_VENDOR_CODE) && ((setup->wIndex & 0xFF) == 7))
+      usbd_ctrl_send((usbd_core_type *)udev, MS_OS_20_DescriptorSet, MIN(setup->wLength, MS_OS_20_DescriptorSet[8] | (MS_OS_20_DescriptorSet[9] << 8)));
+    else
+      usbd_ctrl_unsupport((usbd_core_type *)udev);
+    
+    return ret;
+  }
+#endif
+
+  if((setup->bmRequestType & USB_REQ_TYPE_RESERVED) == USB_REQ_TYPE_CLASS)
   {
     udev->class_handler->setup_handler(udev, &udev->setup);
     return ret;

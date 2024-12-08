@@ -379,16 +379,16 @@ static void int_to_unicode(uint32_t value , uint8_t *pbuf , uint8_t len)
 
 
 
-uint8_t BOS_Descriptor[] =
+ALIGNED_HEAD uint8_t BOS_Descriptor[] ALIGNED_TAIL =
 {
 	5,
-	0x0F,
+	DESC_BOS,
 	5+20+8, 0,					// wTotalLength
 	1,							// bNumDeviceCaps
 	
 	/*** MS OS 2.0 descriptor platform capability descriptor ***/
 	28,
-	0x10,
+	DESC_CAPABILITY,
 	5,							// bDevCapabilityType: PLATFORM (05H)
 	0x00,
 	0xDF, 0x60, 0xDD, 0xD8,		// PlatformCapabilityUUID: MS_OS_20_Platform_Capability_ID (D8DD60DF-4589-4CC7-9CD2-659D9E648A9F)
@@ -402,6 +402,17 @@ uint8_t BOS_Descriptor[] =
     0x00,                 		// bAltEnumCmd
 };
 
+usbd_desc_t *get_bos_descriptor(void)
+{
+	static usbd_desc_t bos_descriptor =
+	{
+		sizeof(BOS_Descriptor),
+		BOS_Descriptor
+	};
+	
+	return &bos_descriptor;
+}
+
 
 #define MS_OS_20_SET_HEADER_DESCRIPTOR        0x00
 #define MS_OS_20_SUBSET_HEADER_CONFIGURATION  0x01
@@ -413,7 +424,7 @@ uint8_t BOS_Descriptor[] =
 #define MS_OS_20_FEATURE_CCGP_DEVICE          0x07
 #define MS_OS_20_FEATURE_VENDOR_REVISION      0x08
 
-uint8_t MS_OS_20_DescriptorSet[] = 
+ALIGNED_HEAD uint8_t MS_OS_20_DescriptorSet[] ALIGNED_TAIL = 
 {
 	/*** Microsoft OS 2.0 Descriptor Set Header ***/
 	10, 0,
