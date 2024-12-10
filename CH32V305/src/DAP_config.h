@@ -559,15 +559,9 @@ __STATIC_FORCEINLINE uint32_t PIN_nRESET_IN  (void) {
            - 0: issue a device hardware reset.
            - 1: release device hardware reset.
 */
-extern uint8_t swd_write_word(uint32_t addr, uint32_t val);
 __STATIC_FORCEINLINE void     PIN_nRESET_OUT (uint32_t bit) {
   if(bit & 1) nRESET_PORT->BSHR = nRESET_PIN;
   else        nRESET_PORT->BCR  = nRESET_PIN;
-  
-  if((bit & 1) == 0)
-  {
-    swd_write_word((uint32_t)&SCB->AIRCR, ((0x5FA << SCB_AIRCR_VECTKEY_Pos) | SCB_AIRCR_SYSRESETREQ_Msk));
-  }
 }
 
 ///@}
@@ -676,9 +670,7 @@ when a device needs a time-critical unlock sequence that enables the debug port.
         1 = a device specific reset sequence is implemented.
 */
 __STATIC_INLINE uint8_t RESET_TARGET (void) {
-  swd_write_word((uint32_t)&SCB->AIRCR, ((0x5FA << SCB_AIRCR_VECTKEY_Pos) | SCB_AIRCR_SYSRESETREQ_Msk));
-  
-  return 1; // change to '1' when a device reset sequence is implemented
+  return (0U);             // change to '1' when a device reset sequence is implemented
 }
 
 ///@}

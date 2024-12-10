@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>AT32F425F8P7,USE_STDPERIPH_DRIVER, DAP_FW_V1</Define>
               <Undefine></Undefine>
-              <IncludePath>.\src;.\src\CSL\CMSIS\core_support;.\src\CSL\CMSIS\device_support;.\src\CSL\AT32F425_StdPeriph_Driver;.\src\CSL\AT32F425_USB_Lib;..\core\DAP\Include;..\core\SWD_host</IncludePath>
+              <IncludePath>.\src;.\src\CSL\CMSIS\core_support;.\src\CSL\CMSIS\device_support;.\src\CSL\AT32F425_StdPeriph_Driver;.\src\CSL\AT32F425_USB_Lib;..\DAP\Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -410,27 +410,17 @@
             <File>
               <FileName>DAP.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\core\DAP\Source\DAP.c</FilePath>
+              <FilePath>..\DAP\Source\DAP.c</FilePath>
             </File>
             <File>
               <FileName>SW_DP.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\core\DAP\Source\SW_DP.c</FilePath>
+              <FilePath>..\DAP\Source\SW_DP.c</FilePath>
             </File>
             <File>
               <FileName>JTAG_DP.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\core\DAP\Source\JTAG_DP.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>SWD_host</GroupName>
-          <Files>
-            <File>
-              <FileName>SWD_host.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\core\SWD_host\SWD_host.c</FilePath>
+              <FilePath>..\DAP\Source\JTAG_DP.c</FilePath>
             </File>
           </Files>
         </Group>

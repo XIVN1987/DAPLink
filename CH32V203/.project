@@ -33,9 +33,9 @@
   </filteredResources>
   <linkedResources>
     <link>
-      <name>core</name>
+      <name>DAP</name>
       <type>2</type>
-      <location>PARENT-1-PROJECT_LOC/core</location>
+      <location>PARENT-1-PROJECT_LOC/DAP</location>
     </link>
   </linkedResources>
 </projectDescription>
