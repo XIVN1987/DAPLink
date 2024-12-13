@@ -56,3 +56,19 @@ DAPLink (CMSIS-DAP) based on WCH CH32V305 (High Speed USB with on-chip PHY), sup
 | JTAG_TDO | PB.14 |
 
 Sch & PCB: [https://oshwhub.com/xivn1987/DAPLink-HS](https://oshwhub.com/xivn1987/DAPLink-HS)
+
+## Speed Test
+**test command**
+``` shell
+pyocd erase -t stm32f411ce -f 5mhz --chip
+pyocd flash -t stm32f411ce -f 5mhz random_512k.bin
+```
+
+**test result**
+| probe           | pyocd print                                                                                                   |
+| ----            | ----                                                                                                          |
+| AT32F425 HID    | Erased 524288 bytes (8 sectors), programmed 524288 bytes (512 pages), skipped 0 bytes (0 pages) at 17.24 kB/s |
+| AT32F425 WINUSB | Erased 524288 bytes (8 sectors), programmed 524288 bytes (512 pages), skipped 0 bytes (0 pages) at 38.34 kB/s |
+| CH32V203 HID    | Erased 524288 bytes (8 sectors), programmed 524288 bytes (512 pages), skipped 0 bytes (0 pages) at 17.26 kB/s |
+| CH32V203 WINUSB | Erased 524288 bytes (8 sectors), programmed 524288 bytes (512 pages), skipped 0 bytes (0 pages) at 38.16 kB/s |
+| CH32V305 HID    | Erased 524288 bytes (8 sectors), programmed 524288 bytes (512 pages), skipped 0 bytes (0 pages) at 35.44 kB/s |

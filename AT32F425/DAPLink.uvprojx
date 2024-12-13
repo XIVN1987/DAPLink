@@ -336,7 +336,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>AT32F425F8P7,USE_STDPERIPH_DRIVER, DAP_FW_V1</Define>
+              <Define>AT32F425F8P7,USE_STDPERIPH_DRIVER,</Define>
               <Undefine></Undefine>
               <IncludePath>.\src;.\src\CSL\CMSIS\core_support;.\src\CSL\CMSIS\device_support;.\src\CSL\AT32F425_StdPeriph_Driver;.\src\CSL\AT32F425_USB_Lib;..\DAP\Include</IncludePath>
             </VariousControls>
