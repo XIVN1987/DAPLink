@@ -160,8 +160,8 @@ static const char TargetBoardName    [] = TARGET_BOARD_NAME;
 \return String length (including terminating NULL character) or 0 (no string).
 */
 __STATIC_INLINE uint8_t DAP_GetVendorString (char *str) {
-  memcpy((unsigned char*)str, "XIVN1987", sizeof("XIVN1987"));
-  return sizeof("XIVN1987");
+  (void)str;
+  return (0U);
 }
 
 /** Get Product Name string.
@@ -169,8 +169,8 @@ __STATIC_INLINE uint8_t DAP_GetVendorString (char *str) {
 \return String length (including terminating NULL character) or 0 (no string).
 */
 __STATIC_INLINE uint8_t DAP_GetProductString (char *str) {
-  memcpy((unsigned char*)str, "XV-Link CMSIS-DAP", sizeof("XV-Link CMSIS-DAP"));
-  return sizeof("XV-Link CMSIS-DAP");
+  (void)str;
+  return (0U);
 }
 
 /** Get Serial Number string.
@@ -178,8 +178,8 @@ __STATIC_INLINE uint8_t DAP_GetProductString (char *str) {
 \return String length (including terminating NULL character) or 0 (no string).
 */
 __STATIC_INLINE uint8_t DAP_GetSerNumString (char *str) {
-  memcpy((unsigned char*)str, "002412080000", sizeof("002412080000"));
-  return sizeof("002412080000");
+  (void)str;
+  return (0U);
 }
 
 /** Get Target Device Vendor string.
@@ -255,8 +255,8 @@ __STATIC_INLINE uint8_t DAP_GetTargetBoardNameString (char *str) {
 \return String length (including terminating NULL character) or 0 (no string).
 */
 __STATIC_INLINE uint8_t DAP_GetProductFirmwareVersionString (char *str) {
-  memcpy((unsigned char*)str, "V1.1", sizeof("V1.1"));
-  return sizeof("V1.1");
+  memcpy((unsigned char*)str, "V1.2", strlen("V1.2")+1);
+  return strlen("V1.2")+1;
 }
 
 ///@}
