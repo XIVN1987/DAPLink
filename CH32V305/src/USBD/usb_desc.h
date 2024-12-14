@@ -62,7 +62,7 @@ extern const uint8_t USB_CfgDesc_HS[];
 extern const uint8_t USB_StringLangID[];
 extern const uint8_t USB_StringVendor[];
 extern const uint8_t USB_StringProduct[];
-extern const uint8_t USB_StringSerialNbr[];
+extern       uint8_t USB_StringSerialNbr[];
 extern const uint8_t USB_QualifierDesc[];
 extern const uint8_t HID_ReportDesc_FS[];
 extern const uint8_t HID_ReportDesc_HS[];

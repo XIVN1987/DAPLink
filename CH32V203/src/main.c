@@ -59,6 +59,7 @@ void SysTick_Handler(void)
 }
 
 
+void int_to_unicode(uint32_t value , uint8_t *pbuf , uint8_t len);
 void USB_Config(void)
 {
     NVIC_InitTypeDef NVIC_InitStructure;
@@ -66,6 +67,15 @@ void USB_Config(void)
 
     RCC_USBCLKConfig(RCC_USBCLKSource_PLLCLK_Div3);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USB, ENABLE);
+
+    /* update serial number string with chip unique ID */
+    extern uint8_t USBD_StringSerial [];
+    uint32_t serial0 = *(uint32_t*)0x1FFFF7E8;
+    uint32_t serial1 = *(uint32_t*)0x1FFFF7EC;
+    uint32_t serial2 = *(uint32_t*)0x1FFFF7F0;
+
+    int_to_unicode(serial0 + serial2, &USBD_StringSerial[2],  8);
+    int_to_unicode(serial1 + serial2, &USBD_StringSerial[18], 4);
 
     USB_Init();
 
@@ -143,3 +153,22 @@ void Delay_Ms(uint32_t n)
     for(int i = 0; i < SystemCoreClock / 4000 * n; i++) __NOP();
 }
 
+
+void int_to_unicode(uint32_t value , uint8_t *pbuf , uint8_t len)
+{
+    for(int i = 0 ; i < len ; i++)
+    {
+        if((value >> 28) < 0xA)
+        {
+            pbuf[2 * i] = (value >> 28) + '0';
+        }
+        else
+        {
+            pbuf[2 * i] = (value >> 28) + 'A' - 10;
+        }
+
+        pbuf[2 * i + 1] = 0;
+
+        value = value << 4;
+    }
+}

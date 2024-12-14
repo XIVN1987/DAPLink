@@ -402,7 +402,7 @@ const uint8_t USB_StringProduct[] =
 
 
 /* Serial Number Descriptor */
-const uint8_t USB_StringSerialNbr[] =
+uint8_t USB_StringSerialNbr[] =
 {
     USB_SIZE_STRING_SERIALNBR,
     USB_DESCR_TYP_STRING,
