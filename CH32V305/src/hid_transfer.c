@@ -5,7 +5,7 @@
 #include "usb_desc.h"
 #include "hid_transfer.h"
 
-#include "DAP_Config.h"
+#include "DAP_config.h"
 #include "DAP.h"
 
 
