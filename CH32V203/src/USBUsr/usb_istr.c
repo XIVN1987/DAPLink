@@ -227,7 +227,7 @@ void EP3_OUT_Callback(void)
 
 
 /***************************************************************/
-#include "DAP_Config.h"
+#include "DAP_config.h"
 #include "DAP.h"
 
 static volatile uint8_t  USB_RequestFull;       // Request  Buffer Full Flag
