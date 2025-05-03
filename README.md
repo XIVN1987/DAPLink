@@ -44,6 +44,10 @@ Sch & PCB: [https://oshwhub.com/xivn1987/daplink](https://oshwhub.com/xivn1987/d
 ## DAPLink-CH32V305
 DAPLink (CMSIS-DAP) based on WCH CH32V305 (High Speed USB with on-chip PHY), supports SWD, JTAG and CDC.
 
+On Properties for DAPLink -> C/C++ Build -> Settings -> C Compiler -> Preprocessor page:
+* Define `DAP_FW_V1`: generate CMSIS-DAP V1 firmware, using HID transport protocol.
+* Do not define `DAP_FW_V1`: generate CMSIS-DAP V2 firmware, using WINUSB transfer protocol.
+
 ### Pin map
 |  FUNC    | Pin   |
 |  :----   | :---- |
@@ -72,3 +76,4 @@ pyocd flash -t stm32f411ce -f 5mhz random_512k.bin
 | CH32V203 HID    | Erased 524288 bytes (8 sectors), programmed 524288 bytes (512 pages), skipped 0 bytes (0 pages) at 17.26 kB/s |
 | CH32V203 WINUSB | Erased 524288 bytes (8 sectors), programmed 524288 bytes (512 pages), skipped 0 bytes (0 pages) at 38.16 kB/s |
 | CH32V305 HID    | Erased 524288 bytes (8 sectors), programmed 524288 bytes (512 pages), skipped 0 bytes (0 pages) at 35.44 kB/s |
+| CH32V305 WINUSB | Erased 524288 bytes (8 sectors), programmed 524288 bytes (512 pages), skipped 0 bytes (0 pages) at 39.40 kB/s |

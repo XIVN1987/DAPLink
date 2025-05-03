@@ -258,6 +258,11 @@ void USBHS_IRQHandler( void )
                         len          = USB_StringSerialNbr[0];
                         break;
 
+                    case 4:
+                        pUSBHS_Descr = USB_StringInterface;
+                        len          = USB_StringInterface[0];
+                        break;
+
                     default:
                         error = 0xFF;
                         break;
@@ -269,9 +274,12 @@ void USBHS_IRQHandler( void )
                     len          = USB_QualifierDesc[0];
                     break;
 
+#ifndef DAP_FW_V1
                 case USB_DESCR_TYP_BOS:
-                    error = 0xFF;
+                    pUSBHS_Descr = BOS_Descriptor;
+                    len          = BOS_Descriptor[0] + BOS_Descriptor[5];
                     break;
+#endif
 
                 default :
                     error = 0xFF;
@@ -481,7 +489,13 @@ void USBHS_IRQHandler( void )
             }
             else if(USBHS_Setup.bRequestType & USB_REQ_TYP_VENDOR)
             {
-                error = 0xFF;
+                if((USBHS_Setup.bRequest == WINUSB_VENDOR_CODE) && (USBHS_Setup.wIndex == 7))
+                {
+                    pUSBHS_Descr = MS_OS_20_DescriptorSet;
+                    len          = MS_OS_20_DescriptorSet[8];
+                }
+                else
+                    error = 0xFF;
             }
             else
             {
@@ -564,6 +578,18 @@ void USBHS_IRQHandler( void )
                         break;
                     }
                 }
+#ifndef DAP_FW_V1
+                else if((USBHS_Setup.bRequestType & USB_REQ_TYP_MASK) == USB_REQ_TYP_VENDOR)
+                {
+                    len = USBHS_Setup.wLength >= USB_MAX_EP0_SZ ? USB_MAX_EP0_SZ : USBHS_Setup.wLength;
+                    memcpy(USBHS_EP0_Buf, pUSBHS_Descr, len);
+                    USBHS_Setup.wLength -= len;
+                    pUSBHS_Descr += len;
+
+                    USBHSD->UEP0_TX_LEN = len;
+                    USBHSD->UEP0_TX_CTRL ^= USBHS_UEP_T_TOG_DATA1;
+                }
+#endif
                 else
                 {
                     /* Non-standard request endpoint 0 Data upload */

@@ -97,7 +97,7 @@ const uint8_t USB_CfgDesc_FS[] =
 #endif
     0x00,                               // bInterfaceSubClass
     0x00,                               // bInterfaceProtocol
-    0x00,                               // iInterface
+    0x04,                               // iInterface
 
 #ifdef DAP_FW_V1
     // HID Descriptor
@@ -246,7 +246,7 @@ const uint8_t USB_CfgDesc_HS[] =
 #endif
     0x00,                               // bInterfaceSubClass
     0x00,                               // bInterfaceProtocol
-    0x00,                               // iInterface
+    0x04,                               // iInterface
 
 #ifdef DAP_FW_V1
     // HID Descriptor
@@ -410,6 +410,15 @@ uint8_t USB_StringSerialNbr[] =
 };
 
 
+/* Interface Descriptor */
+const uint8_t USB_StringInterface[] =
+{
+    USB_SIZE_STRING_PRODUCT,
+    USB_DESCR_TYP_STRING,
+    'X', 0, 'V', 0, '-', 0, 'L', 0, 'i', 0, 'n', 0, 'k', 0, ' ', 0, 'C', 0, 'M', 0, 'S', 0, 'I', 0, 'S', 0, '-', 0, 'D', 0, 'A', 0, 'P', 0
+};
+
+
 /* Device Qualified Descriptor */
 const uint8_t USB_QualifierDesc[] =
 {
@@ -422,4 +431,76 @@ const uint8_t USB_QualifierDesc[] =
     0x40,                       // bMaxPacketSize0 for other speed
     0x01,                       // bNumConfigurations
     0x00,                       // bReserved
+};
+
+
+
+
+const uint8_t BOS_Descriptor[] =
+{
+    5,
+    USB_DESCR_TYP_BOS,
+    5+20+8, 0,                  // wTotalLength
+    1,                          // bNumDeviceCaps
+
+    /*** MS OS 2.0 descriptor platform capability descriptor ***/
+    28,
+    DESC_CAPABILITY,
+    5,                          // bDevCapabilityType: PLATFORM (05H)
+    0x00,
+    0xDF, 0x60, 0xDD, 0xD8,     // PlatformCapabilityUUID: MS_OS_20_Platform_Capability_ID (D8DD60DF-4589-4CC7-9CD2-659D9E648A9F)
+    0x89, 0x45, 0xC7, 0x4C,
+    0x9C, 0xD2, 0x65, 0x9D,
+    0x9E, 0x64, 0x8A, 0x9F,
+
+    0x00, 0x00, 0x03, 0x06,     // dwWindowsVersion: 0x06030000 for Windows 8.1
+    10+8+20+128, 0x00,          // wTotalLength: size of MS OS 2.0 descriptor set
+    WINUSB_VENDOR_CODE,         // bMS_VendorCode
+    0x00,                       // bAltEnumCmd
+};
+
+
+#define MS_OS_20_SET_HEADER_DESCRIPTOR        0x00
+#define MS_OS_20_SUBSET_HEADER_CONFIGURATION  0x01
+#define MS_OS_20_SUBSET_HEADER_FUNCTION       0x02
+#define MS_OS_20_FEATURE_COMPATIBLE_ID        0x03
+#define MS_OS_20_FEATURE_REG_PROPERTY         0x04
+#define MS_OS_20_FEATURE_MIN_RESUME_TIME      0x05
+#define MS_OS_20_FEATURE_MODEL_ID             0x06
+#define MS_OS_20_FEATURE_CCGP_DEVICE          0x07
+#define MS_OS_20_FEATURE_VENDOR_REVISION      0x08
+
+const uint8_t MS_OS_20_DescriptorSet[] =
+{
+    /*** Microsoft OS 2.0 Descriptor Set Header ***/
+    10, 0,
+    MS_OS_20_SET_HEADER_DESCRIPTOR, 0,
+    0x00, 0x00, 0x03, 0x06,     // dwWindowsVersion: 0x06030000 for Windows 8.1
+    10+8+20+128, 0,             // wTotalLength
+
+    /*** Microsoft OS 2.0 function subset header ***/
+    8, 0,
+    MS_OS_20_SUBSET_HEADER_FUNCTION, 0,
+    0,                          // bFirstInterface, first interface to which this subset applies
+    0,
+    8+20+128, 0,                // wSubsetLength
+
+    /*** Microsoft OS 2.0 compatible ID descriptor ***/
+    20, 0,
+    MS_OS_20_FEATURE_COMPATIBLE_ID, 0,
+    'W',  'I',  'N',  'U',  'S',  'B',  0x00, 0x00,     // CompatibleID
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     // SubCompatibleID
+
+    /*** MS OS 2.0 registry property descriptor ***/
+    128, 0,
+    MS_OS_20_FEATURE_REG_PROPERTY, 0,
+    1, 0,                       // wPropertyDataType: 1 = Unicode REG_SZ
+    40, 0x00,                   // wPropertyNameLength
+    'D', 0, 'e', 0, 'v', 0, 'i', 0, 'c', 0, 'e', 0, 'I', 0, 'n', 0, 't', 0, 'e', 0,
+    'r', 0, 'f', 0, 'a', 0, 'c', 0, 'e', 0, 'G', 0, 'U', 0, 'I', 0, 'D', 0,   0, 0,     // PropertyName: "DeviceInterfaceGUID"
+    78, 0x00,                   // wPropertyDataLength
+    '{', 0, 'C', 0, 'D', 0, 'B', 0, '3', 0, 'B', 0, '5', 0, 'A', 0, 'D', 0, '-', 0,
+    '2', 0, '9', 0, '3', 0, 'B', 0, '-', 0, '4', 0, '6', 0, '6', 0, '3', 0, '-', 0,
+    'A', 0, 'A', 0, '3', 0, '6', 0, '-', 0, '1', 0, 'A', 0, 'A', 0, 'E', 0, '4', 0,
+    '6', 0, '4', 0, '6', 0, '3', 0, '7', 0, '7', 0, '6', 0, '}', 0,   0, 0,             // PropertyData: "{CDB3B5AD-293B-4663-AA36-1AAE46463776}"
 };

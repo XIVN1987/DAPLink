@@ -63,9 +63,17 @@ extern const uint8_t USB_StringLangID[];
 extern const uint8_t USB_StringVendor[];
 extern const uint8_t USB_StringProduct[];
 extern       uint8_t USB_StringSerialNbr[];
+extern const uint8_t USB_StringInterface[];
 extern const uint8_t USB_QualifierDesc[];
 extern const uint8_t HID_ReportDesc_FS[];
 extern const uint8_t HID_ReportDesc_HS[];
+extern const uint8_t BOS_Descriptor[];
+extern const uint8_t MS_OS_20_DescriptorSet[];
+
+
+#define DESC_CAPABILITY     0x10
+
+#define WINUSB_VENDOR_CODE  0x34
 
 
 #endif // __USB_DESC_H__
