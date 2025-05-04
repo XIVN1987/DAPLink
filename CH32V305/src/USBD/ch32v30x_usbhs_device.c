@@ -441,16 +441,7 @@ void USBHS_IRQHandler( void )
                     break;
 
                 case HID_GET_REPORT:
-                    if(USBHS_DevSpeed == USBHS_USB_SPEED_HIGH)
-                    {
-                        len = (USBHS_Setup.wLength >= USB_MAX_EP0_SZ) ? USB_MAX_EP0_SZ : USBHS_Setup.wLength;
-                        memcpy(USBHS_EP0_Buf, HID_ReportDesc_HS, len);
-                    }
-                    else
-                    {
-                        len = (USBHS_Setup.wLength >= USB_MAX_EP0_SZ) ? USB_MAX_EP0_SZ : USBHS_Setup.wLength;
-                        memcpy(USBHS_EP0_Buf, HID_ReportDesc_FS, len);
-                    }
+                    error = 0xFF;
                     break;
 
                 case HID_SET_IDLE:
@@ -459,7 +450,6 @@ void USBHS_IRQHandler( void )
 
                 case HID_GET_IDLE:
                     USBHS_EP0_Buf[0] = USBHS_HID_Idle;
-                    len = 1;
                     break;
 
                 case HID_SET_PROTOCOL:
@@ -468,15 +458,13 @@ void USBHS_IRQHandler( void )
 
                 case HID_GET_PROTOCOL:
                     USBHS_EP0_Buf[0] = USBHS_HID_Protocol;
-                    len = 1;
                     break;
 
                 case CDC_SET_LINE_CODING:
                     break;
 
                 case CDC_GET_LINE_CODING:
-                    pUSBHS_Descr = (uint8_t *)&LineCfg;
-                    len = 7;
+                    memcpy(USBHS_EP0_Buf, (uint8_t *)&LineCfg, 7);
                     break;
 
                 case CDC_SET_LINE_CTLSTE:
@@ -493,6 +481,15 @@ void USBHS_IRQHandler( void )
                 {
                     pUSBHS_Descr = MS_OS_20_DescriptorSet;
                     len          = MS_OS_20_DescriptorSet[8];
+
+                    /* Copy Descriptors to Endp0 DMA buffer */
+                    if(USBHS_Setup.wLength > len)
+                    {
+                        USBHS_Setup.wLength = len;
+                    }
+                    len = (USBHS_Setup.wLength >= USB_MAX_EP0_SZ) ? USB_MAX_EP0_SZ : USBHS_Setup.wLength;
+                    memcpy(USBHS_EP0_Buf, pUSBHS_Descr, len);
+                    pUSBHS_Descr += len;
                 }
                 else
                     error = 0xFF;
@@ -501,11 +498,6 @@ void USBHS_IRQHandler( void )
             {
                 error = 0xFF;
             }
-
-            /* Copy Descriptors to Endp0 DMA buffer */
-            len = (USBHS_Setup.wLength >= USB_MAX_EP0_SZ) ? USB_MAX_EP0_SZ : USBHS_Setup.wLength;
-            memcpy(USBHS_EP0_Buf, pUSBHS_Descr, len);
-            pUSBHS_Descr += len;
         }
 
         if(error == 0xFF)
@@ -519,8 +511,8 @@ void USBHS_IRQHandler( void )
             if(USBHS_Setup.bRequestType & USB_EPT_IN)
             {
                 len = (USBHS_Setup.wLength > USB_MAX_EP0_SZ) ? USB_MAX_EP0_SZ : USBHS_Setup.wLength;
-
                 USBHS_Setup.wLength -= len;
+
                 USBHSD->UEP0_TX_LEN = len;
                 USBHSD->UEP0_TX_CTRL = USBHS_UEP_T_TOG_DATA1 | USBHS_UEP_T_RES_ACK;
             }
@@ -578,7 +570,6 @@ void USBHS_IRQHandler( void )
                         break;
                     }
                 }
-#ifndef DAP_FW_V1
                 else if((USBHS_Setup.bRequestType & USB_REQ_TYP_MASK) == USB_REQ_TYP_VENDOR)
                 {
                     len = USBHS_Setup.wLength >= USB_MAX_EP0_SZ ? USB_MAX_EP0_SZ : USBHS_Setup.wLength;
@@ -589,7 +580,6 @@ void USBHS_IRQHandler( void )
                     USBHSD->UEP0_TX_LEN = len;
                     USBHSD->UEP0_TX_CTRL ^= USBHS_UEP_T_TOG_DATA1;
                 }
-#endif
                 else
                 {
                     /* Non-standard request endpoint 0 Data upload */
@@ -642,10 +632,6 @@ void USBHS_IRQHandler( void )
                              memcpy(&LineCfg, USBHS_EP0_Buf, sizeof(LineCfg));
 
                              VCOM_LineCoding(&LineCfg);
-                         }
-                         else if(USBHS_Setup.bRequest == HID_SET_REPORT)
-                         {
-                             error = 0xFF;
                          }
                      }
 
