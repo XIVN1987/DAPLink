@@ -17,10 +17,8 @@ typedef struct {
 	
 	uint8_t  in_buff[512];
 	uint16_t in_bytes;
-	uint16_t in_ready;
 	uint8_t  out_buff[512];
 	uint16_t out_bytes;
-	uint16_t out_ready;
 } VCOM;
 
 extern volatile VCOM Vcom;

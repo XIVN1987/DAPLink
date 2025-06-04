@@ -102,8 +102,6 @@ void USBHS_Device_Endp_Init(void)
     USBHSD->UEP3_TX_LEN  = 0;
     USBHSD->UEP3_TX_CTRL = USBHS_UEP_T_RES_NAK;
     USBHSD->UEP3_RX_CTRL = USBHS_UEP_R_RES_ACK;
-
-    Vcom.in_ready = 1;
 }
 
 
@@ -601,8 +599,6 @@ void USBHS_IRQHandler( void )
             case CDC_BULK_IN_EP & 0x0F:
                 USBHSD->UEP3_TX_CTRL = (USBHSD->UEP3_TX_CTRL & ~USBHS_UEP_T_RES_MASK) | USBHS_UEP_T_RES_NAK;
                 USBHSD->UEP3_TX_CTRL ^= USBHS_UEP_T_TOG_DATA1;
-
-                Vcom.in_ready = 1;
                 break;
 
             default:
@@ -657,7 +653,6 @@ void USBHS_IRQHandler( void )
                 USBHSD->UEP3_RX_CTRL = (USBHSD->UEP3_RX_CTRL & ~USBHS_UEP_R_RES_MASK) | USBHS_UEP_R_RES_NAK;
 
                 Vcom.out_bytes = len;
-                Vcom.out_ready = 1;
                 break;
 
             default:
