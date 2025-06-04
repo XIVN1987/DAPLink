@@ -7,11 +7,9 @@
 
 typedef struct {
 	uint8_t  rx_buff[RX_BUFF_SIZE];
-	uint16_t rx_bytes;
 	uint16_t rx_wrptr;
 	uint16_t rx_rdptr;
 	uint8_t  tx_buff[TX_BUFF_SIZE];
-	uint16_t tx_bytes;
 	uint16_t tx_wrptr;
 	uint16_t tx_rdptr;
 	
