@@ -214,15 +214,12 @@ void EP2_IN_Callback(void)
 
 void EP3_IN_Callback(void)
 {
-    Vcom.in_ready = 1;
 }
 
 
 void EP3_OUT_Callback(void)
 {
     Vcom.out_bytes = USB_SIL_Read(EP3_OUT, (uint8_t *)Vcom.out_buff);
-
-    Vcom.out_ready = 1;
 }
 
 

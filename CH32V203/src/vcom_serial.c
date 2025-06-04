@@ -127,7 +127,7 @@ void VCOM_TransferData(void)
     static uint32_t last_ms = 0;
     static uint32_t last_pos = 0;
 
-    if(Vcom.in_ready)		// 可以向主机发送数据
+    if(GetEPTxStatus(ENDP3) == EP_TX_NAK)   // 可以向主机发送数据
     {
         uint32_t pos = RXDMA_SZ - DMA_GetCurrDataCounter(DMA1_Channel6);
         if((pos - last_pos >= CDC_BULK_IN_SZ) || ((pos != last_pos) && (SysTick_ms != last_ms)))
@@ -139,8 +139,6 @@ void VCOM_TransferData(void)
                 pos = last_pos + CDC_BULK_IN_SZ;
 
             Vcom.in_bytes = pos - last_pos;
-
-            Vcom.in_ready = 0;
 
             USB_SIL_Write(EP3_IN, &RXBuffer[last_pos], Vcom.in_bytes);
             SetEPTxValid(ENDP3);
@@ -164,15 +162,15 @@ void VCOM_TransferData(void)
     }
 
 	/* 从主机接收到数据，且前面的数据 DMA 已发送完 */
-    if(Vcom.out_ready && (DMA_GetCurrDataCounter(DMA1_Channel7) == 0))
+    if(Vcom.out_bytes && (DMA_GetCurrDataCounter(DMA1_Channel7) == 0))
     {
-        Vcom.out_ready = 0;
-
         memcpy(TXBuffer, (uint8_t *)Vcom.out_buff, Vcom.out_bytes);
 
         DMA_Cmd(DMA1_Channel7, DISABLE);
         DMA_SetCurrDataCounter(DMA1_Channel7, Vcom.out_bytes);
         DMA_Cmd(DMA1_Channel7, ENABLE);
+
+        Vcom.out_bytes = 0;
 
         /* Ready for next BULK OUT */
 		SetEPRxValid(ENDP3);

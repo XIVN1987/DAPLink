@@ -130,8 +130,8 @@ void VCOM_TransferData(void)
                 pos = last_pos + CDC_BULK_IN_SZ;
 
             Vcom.in_bytes = pos - last_pos;
-
-            Vcom.in_ready = 0;
+			
+			Vcom.in_ready = 0;
 			
 			memcpy((uint8_t *)Vcom.in_buff, &RXBuffer[last_pos], Vcom.in_bytes);
 			usbd_ept_send(&Otg.dev, CDC_BULK_IN_EP, (uint8_t *)Vcom.in_buff, Vcom.in_bytes);
@@ -154,15 +154,15 @@ void VCOM_TransferData(void)
     }
 
 	/* 从主机接收到数据，且前面的数据 DMA 已发送完 */
-    if(Vcom.out_ready && (dma_data_number_get(DMA1_CHANNEL1) == 0))
+    if(Vcom.out_bytes && (dma_data_number_get(DMA1_CHANNEL1) == 0))
     {
-        Vcom.out_ready = 0;
-		
 		memcpy(TXBuffer, (uint8_t *)Vcom.out_buff, Vcom.out_bytes);
 		
 		dma_channel_enable(DMA1_CHANNEL1, FALSE);
         dma_data_number_set(DMA1_CHANNEL1, Vcom.out_bytes);
         dma_channel_enable(DMA1_CHANNEL1, TRUE);
+		
+		Vcom.out_bytes = 0;
 
         /* Ready for next BULK OUT */
         usbd_ept_recv(&Otg.dev, CDC_BULK_OUT_EP, (uint8_t *)Vcom.out_buff, CDC_BULK_OUT_SZ);

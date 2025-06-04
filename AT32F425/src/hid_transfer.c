@@ -212,7 +212,6 @@ static usb_sts_type class_out_handler(void *udev, uint8_t ept_num)
 		
 		case CDC_BULK_OUT_EP:
 			Vcom.out_bytes = recv_len;
-			Vcom.out_ready = 1;
 			break;
 	}
 
